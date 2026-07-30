@@ -171,6 +171,22 @@ describe("POST /api/v1/analyses", () => {
     expect(response.status).toBe(429);
     await expect(response.json()).resolves.toMatchObject({ error: "daily_limit" });
     expect(fetch).not.toHaveBeenCalled();
+    // The job was claimed a moment earlier; left pending it would block this
+    // product for the whole job timeout.
+    expect(store.writeJob).toHaveBeenLastCalledWith(
+      expect.objectContaining({ status: "failed", reason: "daily_limit" }),
+    );
+  });
+
+  it("charges the budget only to the request that will actually research", async () => {
+    // A shared link puts several people on one product at once. Every loser
+    // spending a unit would drain the budget that exists for exactly that
+    // burst, without a single analysis being produced.
+    store.claimJob.mockResolvedValue(false);
+
+    await handler(post({ query: "Bosch WAN28160BY" }), context());
+
+    expect(store.allowResearch).not.toHaveBeenCalled();
   });
 
   it("still serves an analysis it has already paid for", async () => {

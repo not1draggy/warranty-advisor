@@ -68,11 +68,6 @@ async function handlePost(request: Request) {
     return json({ error: "rate_limited" }, 429);
   }
 
-  // Checked after the cache, so only runs the site actually pays for count.
-  if (!(await allowResearch())) {
-    return json({ error: "daily_limit" }, 429);
-  }
-
   const job: Job = {
     id,
     query,
@@ -86,6 +81,16 @@ async function handlePost(request: Request) {
   if (!(await claimJob(job))) {
     log("analysis_already_running", { id });
     return json({ id, status: "pending" }, 202);
+  }
+
+  // Charged only to the request that actually won the right to research, and
+  // only after the cache missed. A burst on a shared link would otherwise have
+  // every loser spend a unit of a budget that exists for exactly that burst.
+  // The claimed job must not be left pending, or it blocks the product for the
+  // length of the job timeout.
+  if (!(await allowResearch())) {
+    await writeJob({ ...job, status: "failed", reason: "daily_limit" });
+    return json({ error: "daily_limit" }, 429);
   }
 
   // Background functions accept the request and return 202 immediately, so
