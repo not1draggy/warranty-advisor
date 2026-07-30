@@ -51,7 +51,7 @@ export function SearchHero({ onSearch, busy, compact }: Props) {
           type="text"
           value={value}
           onChange={(event) => setValue(event.target.value)}
-          placeholder="Napr. Bosch WAN28160BY"
+          placeholder="Napr. Bosch WAN28160BY alebo dva modely oddelené „vs“"
           maxLength={120}
           autoComplete="off"
           disabled={busy}
@@ -88,6 +88,9 @@ export function SearchHero({ onSearch, busy, compact }: Props) {
             Máte konkrétnu ponuku? Pripíšte cenu — <span className="font-mono">349€</span> — a ak
             zvažujete aj predĺženú záruku, jej dĺžku a cenu:{" "}
             <span className="font-mono">+3 70,90€</span>
+            <br />
+            Vyberáte medzi dvomi? Oddeľte ich slovom{" "}
+            <span className="font-mono">vs</span> a porovnáme ich vedľa seba.
           </p>
         </>
       )}
