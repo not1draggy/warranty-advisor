@@ -27,6 +27,10 @@ const MESSAGES: Record<FailureReason, { title: string; body: string }> = {
     title: "Túto požiadavku nedokážeme spracovať",
     body: "Skúste zadať konkrétny model spotrebiča alebo elektroniky.",
   },
+  still_running: {
+    title: "Analýza ešte stále beží",
+    body: "Tento model si vyžiadal dôkladnejšie hľadanie. Skúste to o chvíľu znova — pokračujeme tam, kde sme skončili, a hotový výsledok sa načíta okamžite.",
+  },
   not_a_product: {
     title: "Toto zatiaľ nevyzerá ako výrobok",
     body: "Zadajte značku a model spotrebiča alebo elektroniky. Stačí aj samotná značka s kategóriou — napríklad „práčka Bosch“.",
@@ -47,6 +51,7 @@ const MESSAGES: Record<FailureReason, { title: string; body: string }> = {
  * example queries — is already the affordance for that.
  */
 const RETRYABLE: ReadonlySet<FailureReason> = new Set<FailureReason>([
+  "still_running",
   "rate_limited",
   "timeout",
   "network",

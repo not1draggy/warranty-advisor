@@ -15,6 +15,7 @@ export type FailureReason =
   | "timeout"
   | "network"
   | "refused"
+  | "still_running"
   | "not_a_product"
   | "unusable_response"
   | "upstream_error";
@@ -46,6 +47,7 @@ const FAILURE_REASONS: readonly FailureReason[] = [
   "timeout",
   "network",
   "refused",
+  "still_running",
   "not_a_product",
   "unusable_response",
   "upstream_error",
@@ -107,7 +109,10 @@ async function poll(id: string, signal: AbortSignal): Promise<AnalysisOutcome> {
     }
   }
 
-  return { status: "failed", reason: "timeout" };
+  // The loop only reaches here having just seen the job pending: every other
+  // status returns early. The work is still going, so say that rather than
+  // implying it died.
+  return { status: "failed", reason: "still_running" };
 }
 
 export async function analyze(product: string, signal: AbortSignal): Promise<AnalysisOutcome> {
