@@ -336,13 +336,33 @@ const DEMO_ANALYSES: DemoAnalysis[] = [
   },
 ];
 
+/**
+ * Shortest fragment specific enough to stand for a model number, and it must
+ * carry a digit. Without both, "Bosch" would return a particular washing
+ * machine and "13" would return an iPhone — an analysis of a product the
+ * reader never asked about, which is worse than admitting to having none.
+ */
+const MIN_PARTIAL_MODEL = 6;
+
+function matches(alias: string, needle: string): boolean {
+  if (alias === needle) return true;
+
+  // The user typed the model with words around it: "bosch wan28160by práčka".
+  if (needle.includes(alias)) return true;
+
+  // A partial model number, but only when it is specific enough to mean one.
+  return (
+    needle.length >= MIN_PARTIAL_MODEL && /\d/.test(needle) && alias.includes(needle)
+  );
+}
+
 /** Matches a query against the demo catalogue; `null` when nothing fits. */
 export function findDemoAnalysis(query: string): AnalysisEvidence | null {
   const needle = normalizeQuery(query);
   if (!needle) return null;
 
   const match = DEMO_ANALYSES.find((demo) =>
-    demo.aliases.some((alias) => alias === needle || alias.includes(needle) || needle.includes(alias)),
+    demo.aliases.some((alias) => matches(alias, needle)),
   );
   return match?.evidence ?? null;
 }
