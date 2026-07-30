@@ -112,8 +112,9 @@ pravdepodobnosti nesie názov svojej poruchy. Priebeh analýzy je živá oblasť
 ```bash
 npm install
 npm run dev     # rozhranie na ukážkových dátach
-npm test        # 303 testov: hodnotenie, normalizácia, úložisko, API, jazyk
+npm test        # 312 testov: hodnotenie, normalizácia, úložisko, API, jazyk
 npm run build   # kontrola typov + produkčný build
+npm run test:coverage  # pokrytie podľa vrstiev
 ```
 
 Bez premennej `ANTHROPIC_API_KEY` beží aplikácia v ukážkovom režime: rozhranie

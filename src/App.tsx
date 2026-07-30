@@ -8,6 +8,7 @@ import { RecentAnalyses } from "./components/RecentAnalyses";
 import { StateNotice } from "./components/StateNotice";
 import { analyze, type FailureReason } from "./lib/api";
 import { parseComparison, type ParsedQuery } from "./lib/query";
+import { resolveOutcomes } from "./lib/outcome";
 import type { AnalysisEvidence } from "../shared/analysis";
 import type { Candidate } from "../shared/compare";
 import { VERDICT } from "../shared/format";
@@ -73,55 +74,28 @@ export default function App() {
       );
       if (controller.signal.aborted) return;
 
-      const candidates: Candidate[] = [];
-      parts.forEach((part, index) => {
-        const outcome = outcomes[index];
-        if (outcome.status !== "ready") return;
-        candidates.push({
-          query: part.product,
-          evidence: outcome.evidence,
-          offeredPrice: part.price,
-          warrantyYears: part.warrantyYears,
-          warrantyPrice: part.warrantyPrice,
-          live: outcome.live,
-        });
-      });
+      const resolved = resolveOutcomes(parts, outcomes);
 
-      if (candidates.length === 0) {
-        // Report the first real reason rather than a generic fault.
-        const failed = outcomes.find((o) => o.status === "failed");
-        setView({
-          kind: "failed",
-          reason: failed?.status === "failed" ? failed.reason : "upstream_error",
-        });
-        return;
+      if (resolved.kind !== "failed") {
+        const shortlisted =
+          resolved.kind === "compared"
+            ? resolved.candidates
+            : [{ query: resolved.evidence.product.model, evidence: resolved.evidence }];
+
+        for (const entry of shortlisted) {
+          const score = scoreAnalysis(entry.evidence);
+          setHistory(
+            recordAnalysis({
+              query: entry.query,
+              model: entry.evidence.product.model,
+              verdict: score.verdict,
+              risk: score.ownershipRisk,
+            }),
+          );
+        }
       }
 
-      for (const candidate of candidates) {
-        const score = scoreAnalysis(candidate.evidence);
-        setHistory(
-          recordAnalysis({
-            query: candidate.query,
-            model: candidate.evidence.product.model,
-            verdict: score.verdict,
-            risk: score.ownershipRisk,
-          }),
-        );
-      }
-
-      // One survivor out of a comparison is just an analysis; presenting it as
-      // a comparison would imply a verdict against something never assessed.
-      if (candidates.length === 1) {
-        const [only] = candidates;
-        setView({
-          kind: "ready",
-          evidence: only.evidence,
-          query: parts.find((p) => p.product === only.query) ?? parts[0],
-          live: only.live,
-        });
-      } else {
-        setView({ kind: "compared", candidates });
-      }
+      setView(resolved);
     } catch {
       // An abort means a newer search took over and owns the view now.
       // Anything else must surface, or the user is stranded on the spinner.
