@@ -17,7 +17,11 @@ const blobs = vi.hoisted(() => ({
   get: vi.fn(),
 }));
 
-const store = vi.hoisted(() => ({ log: vi.fn() }));
+const store = vi.hoisted(() => ({
+  log: vi.fn(),
+  allowRequest: vi.fn(),
+  clientIp: vi.fn(() => "1.2.3.4"),
+}));
 
 vi.mock("@netlify/blobs", () => ({ getStore: () => blobs }));
 vi.mock("../lib/store", () => store);
@@ -39,6 +43,7 @@ function workingStorage() {
 beforeEach(() => {
   vi.clearAllMocks();
   process.env.ANTHROPIC_API_KEY = "sk-ant-secret-value";
+  store.allowRequest.mockResolvedValue(true);
   workingStorage();
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 400 })));
 });
@@ -149,6 +154,30 @@ describe("GET /api/v1/health", () => {
 
     expect(body).not.toContain("sk-ant-secret-value");
     expect(body).not.toContain("secret");
+  });
+
+  it("stops a caller spending the site's function quota", async () => {
+    // Each check costs a background-function invocation, and the endpoint is
+    // unauthenticated — without this it is free amplification.
+    store.allowRequest.mockResolvedValue(false);
+
+    const response = await handler(get());
+
+    expect(response.status).toBe(429);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("still answers when the limiter itself is what is broken", async () => {
+    // The limiter writes to Blobs, and Blobs being down is one of the faults
+    // this endpoint exists to report. Refusing then would hide it.
+    store.allowRequest.mockRejectedValue(new Error("blob store unavailable"));
+    blobs.setJSON.mockRejectedValue(new Error("blob store unavailable"));
+
+    const response = await handler(get());
+    const body = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(body.checks.storage).toBe(false);
   });
 
   it("refuses anything but a read", async () => {

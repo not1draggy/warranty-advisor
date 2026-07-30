@@ -12,12 +12,19 @@
 
 import type { Config } from "@netlify/functions";
 import { getStore } from "@netlify/blobs";
-import { log } from "../lib/store";
+import { allowRequest, clientIp, log } from "../lib/store";
 
 export const config: Config = { path: "/api/v1/health" };
 
 const PROBE_STORE = "health";
 const PROBE_KEY = "probe";
+
+/**
+ * Each check costs one background-function invocation, which is metered. A
+ * human clicking to see whether a deploy came up needs a handful; anything
+ * beyond that is someone spending the site's quota for free.
+ */
+const RATE_LIMIT = { windowMs: 60_000, max: 6 };
 
 /** Round-trips a value through Blobs, which backs both the cache and the jobs. */
 async function storageWorks(): Promise<boolean> {
@@ -52,9 +59,29 @@ async function workerWorks(request: Request): Promise<boolean> {
   }
 }
 
+/**
+ * Fails open: the limiter writes to Blobs, and Blobs being down is one of the
+ * things this endpoint exists to report. Refusing to answer then would hide
+ * exactly the fault the caller came to find.
+ */
+async function withinLimit(request: Request): Promise<boolean> {
+  try {
+    return await allowRequest(clientIp(request), RATE_LIMIT);
+  } catch {
+    return true;
+  }
+}
+
 export default async (request: Request): Promise<Response> => {
   if (request.method !== "GET") {
     return Response.json({ error: "method_not_allowed" }, { status: 405 });
+  }
+
+  if (!(await withinLimit(request))) {
+    return Response.json(
+      { error: "rate_limited", detail: "Kontrola sa dá spustiť najviac niekoľkokrát za minútu." },
+      { status: 429, headers: { "cache-control": "no-store" } },
+    );
   }
 
   const [storage, worker] = await Promise.all([storageWorks(), workerWorks(request)]);

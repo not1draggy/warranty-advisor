@@ -74,7 +74,7 @@ v jednotlivých kategóriách — či je vaňa zvarená, či je chladiaci okruh 
 ```bash
 npm install
 npm run dev     # rozhranie na ukážkových dátach
-npm test        # 224 testov: hodnotenie, normalizácia, úložisko, API, jazyk
+npm test        # 226 testov: hodnotenie, normalizácia, úložisko, API, jazyk
 npm run build   # kontrola typov + produkčný build
 ```
 
@@ -102,3 +102,8 @@ Vráti `200` s `ready: true`, keď je živá analýza pripravená, inak `503` a 
 `checks` presne to, čo chýba. Overuje sa skutočný zápis a čítanie z Blobs a to,
 či je funkcia na pozadí nasadená — bez jediného volania modelu. Odpoveď hovorí
 len o tom, či kľúč existuje, nikdy neprezradí jeho hodnotu.
+
+Každá kontrola stojí jedno spustenie funkcie na pozadí, preto je endpoint
+obmedzený na niekoľko volaní za minútu. Ak zlyhá samotný limiter, kontrola
+odpovie aj tak — inak by zamlčala práve tú poruchu, kvôli ktorej ju niekto
+spustil.
