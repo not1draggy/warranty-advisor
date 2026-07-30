@@ -2,6 +2,7 @@ import { useState } from "react";
 import { PARTS_AVAILABILITY, REPAIR_DIFFICULTY, VERDICT, eur } from "../../shared/format";
 import { compareCandidates, type Candidate, type RankedCandidate } from "../../shared/compare";
 import { AnalysisReport } from "./AnalysisReport";
+import { ShareButton } from "./ShareButton";
 import { VERDICT_TONE } from "./verdict";
 import { Card, Chip, Section } from "./ui";
 
@@ -77,6 +78,11 @@ export function ComparisonView({ candidates }: { candidates: Candidate[] }) {
     <div className="mx-auto w-full max-w-3xl space-y-10 px-4 pb-24">
       <Section title="Ktorý z nich kúpiť">
         <Card>
+          <div className="mb-3 flex justify-end">
+            {/* A comparison is the thing people forward to whoever they are
+                deciding with, and the URL already reproduces it exactly. */}
+            <ShareButton />
+          </div>
           {comparison.winner ? (
             <p className="text-lg font-semibold">
               <span aria-hidden="true">{VERDICT[comparison.winner.score.verdict].icon}</span>{" "}
