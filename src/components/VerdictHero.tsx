@@ -1,12 +1,7 @@
 import { confidenceExplanation, VERDICT, eur } from "../../shared/format";
 import type { Score } from "../../shared/scoring";
 import type { ProductIdentity } from "../../shared/analysis";
-
-const VERDICT_TONE = {
-  buy: { text: "text-good", bg: "bg-good-soft", stroke: "var(--good)" },
-  caution: { text: "text-warn", bg: "bg-warn-soft", stroke: "var(--warn)" },
-  avoid: { text: "text-bad", bg: "bg-bad-soft", stroke: "var(--bad)" },
-} as const;
+import { VERDICT_TONE } from "./verdict";
 
 const GAUGE_RADIUS = 54;
 const GAUGE_LENGTH = Math.PI * GAUGE_RADIUS;

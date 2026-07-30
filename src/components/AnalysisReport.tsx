@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import type { AnalysisEvidence } from "../../shared/analysis";
 import {
   PARTS_AVAILABILITY,
@@ -10,6 +11,7 @@ import {
 import { assessWarranty, scoreAnalysis } from "../../shared/scoring";
 import type { ParsedQuery } from "../lib/query";
 import { FailureCard } from "./FailureCard";
+import { StickyVerdict } from "./StickyVerdict";
 import { VerdictHero } from "./VerdictHero";
 import { Bullets, Card, Chip, Prose, Section, Split } from "./ui";
 
@@ -64,10 +66,15 @@ export function AnalysisReport({
   live: boolean;
 }) {
   const score = scoreAnalysis(evidence);
+  const hero = useRef<HTMLDivElement>(null);
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-10 px-4 pb-24">
-      <VerdictHero product={evidence.product} score={score} live={live} />
+      <StickyVerdict watch={hero} product={evidence.product} score={score} />
+
+      <div ref={hero}>
+        <VerdictHero product={evidence.product} score={score} live={live} />
+      </div>
 
       {!live && (
         <p className="rounded-xl border border-warn/30 bg-warn-soft px-4 py-3 text-sm leading-relaxed text-warn">

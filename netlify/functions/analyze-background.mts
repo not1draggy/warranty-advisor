@@ -7,6 +7,7 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { normalizeEvidence } from "../../shared/normalize";
+import { extractJson } from "../lib/json";
 import { ANALYSIS_SCHEMA, SYSTEM_PROMPT, buildUserMessage } from "../lib/prompt";
 import { log, readJob, writeJob } from "../lib/store";
 
@@ -25,22 +26,6 @@ const WEB_SEARCH_TOOL = {
   name: "web_search",
   max_uses: MAX_SEARCHES,
 } as unknown as Anthropic.ToolUnion;
-
-function extractJson(text: string): unknown {
-  try {
-    return JSON.parse(text);
-  } catch {
-    // Structured output should be pure JSON; salvage it if anything wraps it.
-    const start = text.indexOf("{");
-    const end = text.lastIndexOf("}");
-    if (start === -1 || end <= start) return null;
-    try {
-      return JSON.parse(text.slice(start, end + 1));
-    } catch {
-      return null;
-    }
-  }
-}
 
 async function research(query: string) {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
