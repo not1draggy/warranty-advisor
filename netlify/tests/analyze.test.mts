@@ -17,6 +17,7 @@ const store = vi.hoisted(() => ({
   readJob: vi.fn(),
   writeJob: vi.fn(),
   allowRequest: vi.fn(),
+  allowResearch: vi.fn(),
   claimJob: vi.fn(),
   jobId: vi.fn(() => "job-1"),
   clientIp: vi.fn(() => "1.2.3.4"),
@@ -53,6 +54,7 @@ beforeEach(() => {
   store.readJob.mockResolvedValue(null);
   store.writeJob.mockResolvedValue(undefined);
   store.allowRequest.mockResolvedValue(true);
+  store.allowResearch.mockResolvedValue(true);
   store.claimJob.mockResolvedValue(true);
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 202 })));
 });
@@ -158,6 +160,29 @@ describe("POST /api/v1/analyses", () => {
 
     expect(response.status).toBe(429);
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("stops paying for research once the day's budget is gone", async () => {
+    // The per-IP limiter bounds one visitor; nothing bounded the total bill.
+    store.allowResearch.mockResolvedValue(false);
+
+    const response = await handler(post({ query: "Bosch WAN28160BY" }), context());
+
+    expect(response.status).toBe(429);
+    await expect(response.json()).resolves.toMatchObject({ error: "daily_limit" });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("still serves an analysis it has already paid for", async () => {
+    // The budget caps new research, not the cache — otherwise an exhausted day
+    // would take finished analyses down with it.
+    store.allowResearch.mockResolvedValue(false);
+    store.readJob.mockResolvedValue(readyJob);
+
+    const response = await handler(post({ query: "Bosch WAN28160BY" }), context());
+
+    expect(response.status).toBe(200);
+    expect(store.allowResearch).not.toHaveBeenCalled();
   });
 
   it("marks the job failed when the worker cannot be reached", async () => {

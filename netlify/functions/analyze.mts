@@ -12,6 +12,7 @@
 import type { Config, Context } from "@netlify/functions";
 import {
   allowRequest,
+  allowResearch,
   claimJob,
   clientIp,
   jobId,
@@ -65,6 +66,11 @@ async function handlePost(request: Request) {
 
   if (!(await allowRequest(clientIp(request), RATE_LIMIT))) {
     return json({ error: "rate_limited" }, 429);
+  }
+
+  // Checked after the cache, so only runs the site actually pays for count.
+  if (!(await allowResearch())) {
+    return json({ error: "daily_limit" }, 429);
   }
 
   const job: Job = {

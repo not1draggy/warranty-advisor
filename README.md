@@ -74,7 +74,7 @@ v jednotlivých kategóriách — či je vaňa zvarená, či je chladiaci okruh 
 ```bash
 npm install
 npm run dev     # rozhranie na ukážkových dátach
-npm test        # 227 testov: hodnotenie, normalizácia, úložisko, API, jazyk
+npm test        # 236 testov: hodnotenie, normalizácia, úložisko, API, jazyk
 npm run build   # kontrola typov + produkčný build
 ```
 
@@ -87,6 +87,19 @@ funguje celé, ale analýzy sú vopred pripravené a sú tak aj označené.
 2. Nastav `ANTHROPIC_API_KEY` v premenných prostredia.
 3. Over, že projekt má povolené **background functions** a **Netlify Blobs**.
    Bez nich sa výskum nespustí a rozhranie zostane v ukážkovom režime.
+4. Voliteľne nastav `DAILY_RESEARCH_LIMIT` — koľko nových analýz denne je web
+   ochotný zaplatiť (predvolene 200).
+
+### Strop denných nákladov
+
+Limit na IP adresu obmedzí jedného návštevníka, nie tisíc naraz — a každá nová
+analýza je platené volanie modelu s vyhľadávaním. Verejný endpoint bez stropu je
+otvorený účet.
+
+Počítajú sa len analýzy, za ktoré sa naozaj platí: odpoveď z cache strop
+neminie, takže vyčerpaný deň neodstaví už hotové analýzy. Ak zlyhá samotné
+počítadlo, požiadavka prejde — výpadok úložiska nesmie zhodiť produkt a
+nekontrolované míňanie je dlhodobý jav, ktorý zachytí ďalšia požiadavka.
 
 ### Kontrola nasadenia
 

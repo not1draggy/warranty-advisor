@@ -115,6 +115,52 @@ export async function allowRequest(ip: string, limit: RateLimit): Promise<boolea
   return true;
 }
 
+const BUDGET_STORE = "budget";
+
+/**
+ * How many fresh research runs the site will pay for in a day.
+ *
+ * The per-IP limiter bounds one visitor; it does nothing about a thousand of
+ * them, and every run costs a metered model call with web search. A public,
+ * unauthenticated endpoint without a ceiling is an open tab on someone's card.
+ * Override with `DAILY_RESEARCH_LIMIT`.
+ */
+export const DEFAULT_DAILY_RESEARCH_LIMIT = 200;
+
+export function dailyResearchLimit(): number {
+  const configured = Number.parseInt(process.env.DAILY_RESEARCH_LIMIT ?? "", 10);
+  return Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_DAILY_RESEARCH_LIMIT;
+}
+
+/**
+ * Claims one run against today's budget.
+ *
+ * Counts only runs that are actually paid for — a cache hit never reaches
+ * here. Like the per-IP limiter this rides on eventually consistent storage, so
+ * a burst can overshoot slightly; it exists to stop a runaway bill, not to
+ * meter to the unit.
+ *
+ * Fails open. Losing Blobs must not take the product down, and the spend it
+ * guards against is sustained, so the next request will still catch it.
+ */
+export async function allowResearch(now: Date = new Date()): Promise<boolean> {
+  const limit = dailyResearchLimit();
+  const key = now.toISOString().slice(0, 10);
+
+  try {
+    const store = getStore(BUDGET_STORE);
+    const spent = ((await store.get(key, { type: "json" })) as number | null) ?? 0;
+    if (spent >= limit) {
+      log("daily_budget_exhausted", { day: key, spent, limit });
+      return false;
+    }
+    await store.setJSON(key, spent + 1);
+    return true;
+  } catch {
+    return true;
+  }
+}
+
 export function clientIp(request: Request): string {
   return (
     request.headers.get("x-nf-client-connection-ip") ??

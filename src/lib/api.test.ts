@@ -125,6 +125,26 @@ describe("when the request itself fails", () => {
     });
   });
 
+  it("tells a spent daily budget apart from an impatient visitor", async () => {
+    // Both are 429, but one clears in a minute and the other does not clear
+    // today — offering the same "try again" for both would be a lie.
+    respondWith(json({ error: "daily_limit" }, 429));
+
+    expect(await analyze(DEMO_PRODUCT, controller.signal)).toEqual({
+      status: "failed",
+      reason: "daily_limit",
+    });
+  });
+
+  it("treats a 429 with no explanation as ordinary rate limiting", async () => {
+    respondWith(new Response(null, { status: 429 }));
+
+    expect(await analyze(DEMO_PRODUCT, controller.signal)).toEqual({
+      status: "failed",
+      reason: "rate_limited",
+    });
+  });
+
   it("treats any other error status as an upstream fault", async () => {
     respondWith(json({ error: "internal_error" }, 500));
 

@@ -12,6 +12,7 @@ import { findDemoAnalysis } from "../data/demoAnalyses";
 export type FailureReason =
   | "unavailable"
   | "rate_limited"
+  | "daily_limit"
   | "timeout"
   | "network"
   | "refused"
@@ -44,6 +45,7 @@ export const POLL_TIMEOUT_MS = 5 * 60 * 1000;
 const FAILURE_REASONS: readonly FailureReason[] = [
   "unavailable",
   "rate_limited",
+  "daily_limit",
   "timeout",
   "network",
   "refused",
@@ -132,7 +134,15 @@ export async function analyze(product: string, signal: AbortSignal): Promise<Ana
   // 503 = no API key configured; 404 = functions not deployed at all. Both
   // mean live research is unavailable here, so fall back to the demo catalogue.
   if (response.status === 503 || response.status === 404) return demoOutcome(product);
-  if (response.status === 429) return { status: "failed", reason: "rate_limited" };
+  // Two different 429s: this visitor is going too fast, or the site has spent
+  // its research budget for the day. Only one of them is worth retrying.
+  if (response.status === 429) {
+    const body = (await response.json().catch(() => null)) as JobResponse | null;
+    return {
+      status: "failed",
+      reason: body?.error === "daily_limit" ? "daily_limit" : "rate_limited",
+    };
+  }
   if (!response.ok) return { status: "failed", reason: "upstream_error" };
 
   const job = (await response.json()) as JobResponse;

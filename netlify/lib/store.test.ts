@@ -20,7 +20,9 @@ const {
   FAILURE_TTL_MS,
   JOB_TIMEOUT_MS,
   allowRequest,
+  allowResearch,
   clientIp,
+  DEFAULT_DAILY_RESEARCH_LIMIT,
   jobId,
   readJob,
   writeJob,
@@ -200,5 +202,53 @@ describe("clientIp", () => {
 
   it("degrades to a shared bucket rather than throwing", () => {
     expect(clientIp(request({}))).toBe("unknown");
+  });
+});
+
+describe("allowResearch", () => {
+  afterEach(() => {
+    delete process.env.DAILY_RESEARCH_LIMIT;
+  });
+
+  it("pays for runs up to the day's ceiling and then stops", async () => {
+    process.env.DAILY_RESEARCH_LIMIT = "3";
+
+    for (let i = 0; i < 3; i += 1) expect(await allowResearch()).toBe(true);
+    expect(await allowResearch()).toBe(false);
+  });
+
+  it("starts a fresh budget the next day", async () => {
+    process.env.DAILY_RESEARCH_LIMIT = "2";
+    const today = new Date("2026-07-30T23:59:00Z");
+    const tomorrow = new Date("2026-07-31T00:01:00Z");
+
+    for (let i = 0; i < 2; i += 1) await allowResearch(today);
+    expect(await allowResearch(today)).toBe(false);
+    expect(await allowResearch(tomorrow)).toBe(true);
+  });
+
+  it("keeps working when the budget cannot be read", async () => {
+    // Losing storage must not take the product down; a runaway bill is a
+    // sustained failure, and the next request will still catch it.
+    const failing = new Map<string, unknown>();
+    // The stand-in consults `has` before `get`, so this is where a read breaks.
+    Object.defineProperty(failing, "has", {
+      value: () => {
+        throw new Error("blobs unavailable");
+      },
+    });
+    blobs.set("budget", failing as never);
+
+    expect(await allowResearch()).toBe(true);
+  });
+
+  it("ships a ceiling even with nothing configured", async () => {
+    expect(DEFAULT_DAILY_RESEARCH_LIMIT).toBeGreaterThan(0);
+  });
+
+  it("ignores a limit that is not a usable number", async () => {
+    process.env.DAILY_RESEARCH_LIMIT = "nonsense";
+    // Falling back to zero would take live analysis down site-wide.
+    expect(await allowResearch(new Date("2026-01-01T00:00:00Z"))).toBe(true);
   });
 });

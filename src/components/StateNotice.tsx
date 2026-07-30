@@ -15,6 +15,10 @@ const MESSAGES: Record<FailureReason, { title: string; body: string }> = {
     title: "Priveľa požiadaviek za sebou",
     body: "Chvíľu počkajte a skúste analýzu spustiť znova.",
   },
+  daily_limit: {
+    title: "Dnešná kapacita analýz je vyčerpaná",
+    body: "Nové analýzy budeme opäť spúšťať zajtra. Výrobky, ktoré sme už analyzovali, sa medzitým načítajú okamžite.",
+  },
   timeout: {
     title: "Analýza trvala dlhšie, než je bežné",
     body: "Zdroje sa nepodarilo prejsť v očakávanom čase. Skúste to prosím znova.",
