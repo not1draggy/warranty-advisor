@@ -153,8 +153,10 @@ describe("system prompt", () => {
 
   it("asks which faults the owner could have prevented", () => {
     // A preventable fault changes what the risk means to a buyer, because it
-    // is the one kind they can act on.
-    expect(SYSTEM_PROMPT).toContain("preventable by maintenance");
+    // is the one kind they can act on — so it is a field, not a remark.
+    expect(SYSTEM_PROMPT).toContain('set "preventable"');
+    expect(schema.properties?.failures?.items?.properties).toHaveProperty("preventable");
+    expect(schema.properties?.failures?.items?.required).toContain("preventable");
   });
 
   it("refuses invented citations and prices", () => {

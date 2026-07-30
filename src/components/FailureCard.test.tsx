@@ -19,6 +19,7 @@ const failure = (overrides: Partial<Failure> = {}): Failure => ({
   frequency: "Po siedmich rokoch prevádzky.",
   onsetYears: [7, 10],
   repairCost: [180, 250],
+  preventable: false,
   basis: "fact",
   difficulty: "high",
   sourceIds: ["s1"],
@@ -86,6 +87,13 @@ describe("a predicted failure", () => {
   it("offers no source list at all when nothing is cited", () => {
     // An empty disclosure implying evidence exists would be worse than none.
     expect(text(render(failure({ sourceIds: [] })))).not.toContain("Zdroje (");
+  });
+
+  it("says when the owner can head a fault off", () => {
+    // The one kind of risk a buyer can act on, so it must not be buried in
+    // prose with everything they cannot.
+    expect(text(render(failure({ preventable: true })))).toContain("Dá sa predísť údržbou");
+    expect(text(render(failure({ preventable: false })))).not.toContain("Dá sa predísť");
   });
 
   it("gives the probability bar a reading for anyone who cannot see it", () => {

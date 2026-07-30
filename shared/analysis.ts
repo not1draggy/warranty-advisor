@@ -53,6 +53,12 @@ export interface Failure {
   onsetYears: [number, number] | null;
   /** Full repair cost range in EUR, parts + labour included. */
   repairCost: [number, number];
+  /**
+   * Largely avoidable by ordinary maintenance — descaling, clearing a filter,
+   * not overloading. The only kind of risk a buyer can act on, so it is worth
+   * separating from the faults that simply arrive.
+   */
+  preventable: boolean;
   basis: Basis;
   difficulty: Difficulty;
   sourceIds: string[];

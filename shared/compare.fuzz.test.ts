@@ -65,6 +65,7 @@ function makeCandidate(name: string, random: () => number): Candidate {
       frequency: "",
       onsetYears: random() < 0.5 ? null : ([1 + random() * 8, 4 + random() * 10] as [number, number]),
       repairCost: [low, high] as [number, number],
+      preventable: random() < 0.3,
       basis: "estimate" as const,
       difficulty: pick(DIFFICULTIES),
       sourceIds: [],

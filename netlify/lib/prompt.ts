@@ -104,8 +104,9 @@ Water in much of Slovakia is hard. For anything that heats water — washing
 machine, dishwasher, kettle, coffee machine, boiler — scaling is a leading
 cause of heater and pump failure, and it arrives sooner than in soft-water
 markets. Weigh descaling exposure accordingly rather than quoting a general
-European figure, and say when a fault is largely preventable by maintenance:
-a buyer can act on that, and it changes what the risk means for them.
+European figure, and set "preventable" on any fault ordinary
+maintenance largely avoids: a buyer can act on that, and it changes what the
+risk means for them.
 
 HOW LONG IT LASTS
 "serviceLifeYears" is how long this class of product normally lasts in ordinary
@@ -247,6 +248,7 @@ export const ANALYSIS_SCHEMA = {
           "repairCost",
           "basis",
           "difficulty",
+          "preventable",
           "sourceIds",
         ],
         properties: {
@@ -275,6 +277,11 @@ export const ANALYSIS_SCHEMA = {
           },
           basis: { type: "string", enum: ["fact", "estimate", "assumption"] },
           difficulty: { type: "string", enum: ["low", "medium", "high"] },
+          preventable: {
+            type: "boolean",
+            description:
+              "true, ak sa poruche dá bežnou údržbou (odvápňovanie, čistenie filtra, nepreťažovanie) do veľkej miery predísť.",
+          },
           sourceIds: { type: "array", items: { type: "string" } },
         },
       },

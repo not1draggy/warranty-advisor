@@ -59,6 +59,7 @@ function makeEvidence(random: () => number): AnalysisEvidence {
         frequency: "",
         onsetYears: random() < 0.4 ? null : [from, from + Math.round(random() * 8)],
         repairCost: [low, low + Math.round(random() * 500)],
+        preventable: random() < 0.3,
         basis: "estimate",
         difficulty: pick(DIFFICULTIES),
         sourceIds: random() < 0.5 ? ["s1"] : [],

@@ -52,6 +52,11 @@ export function FailureCard({ failure, sources }: { failure: Failure; sources: S
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <h3 className="font-medium">{failure.component}</h3>
         <div className="flex flex-wrap items-center gap-2">
+          {failure.preventable && (
+            <Chip tone="good" title="Bežná údržba tejto poruche do veľkej miery predchádza.">
+              Dá sa predísť údržbou
+            </Chip>
+          )}
           <BasisChip basis={failure.basis} />
           <Chip tone={tone.chip}>{RISK_LEVEL[failure.riskLevel]}</Chip>
         </div>

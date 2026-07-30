@@ -173,6 +173,9 @@ function normalizeFailures(value: unknown, sourceIds: Set<string>): Failure[] {
       frequency: text(raw.frequency, MAX_SHORT_TEXT),
       onsetYears: onsetWindow(raw.onsetYears),
       repairCost,
+      // Claiming a fault is avoidable is advice a reader may act on, so it
+      // must be stated rather than assumed.
+      preventable: raw.preventable === true,
       basis,
       difficulty: oneOf(raw.difficulty, DIFFICULTIES, "medium"),
       sourceIds: cited,

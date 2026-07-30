@@ -93,8 +93,11 @@ ktorý sa ešte predáva, nech už predajca dielov práve ponúka čokoľvek.
 
 Voda je na väčšine Slovenska tvrdá. Pri všetkom, čo ohrieva vodu, je vodný
 kameň hlavnou príčinou porúch telesa a čerpadla a prichádza skôr než v krajinách
-s mäkkou vodou. Prompt zároveň žiada povedať, ktorá porucha sa dá odvrátiť
-údržbou — to je jediný druh rizika, s ktorým kupujúci môže sám niečo urobiť.
+s mäkkou vodou. Každá porucha zároveň nesie príznak `preventable` — či jej bežná údržba do
+veľkej miery predchádza. Je to jediný druh rizika, s ktorým kupujúci môže sám
+niečo urobiť, preto má vlastný štítok a nie je schovaný v texte. Normalizácia
+ho nikdy neodvodzuje: tvrdiť, že porucha bola odvrátiteľná, keď to nikto
+nepovedal, presúva vinu na majiteľa za chybu, ktorej zabrániť nemohol.
 
 ### Prístupnosť
 
@@ -126,7 +129,7 @@ pravdepodobnosti nesie názov svojej poruchy. Priebeh analýzy je živá oblasť
 ```bash
 npm install
 npm run dev     # rozhranie na ukážkových dátach
-npm test        # 328 testov: hodnotenie, normalizácia, úložisko, API, jazyk
+npm test        # 331 testov: hodnotenie, normalizácia, úložisko, API, jazyk
 npm run build   # kontrola typov + produkčný build
 npm run test:coverage  # pokrytie podľa vrstiev
 ```

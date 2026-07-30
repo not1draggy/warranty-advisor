@@ -22,6 +22,7 @@ function failure(overrides: Partial<Failure> = {}): Failure {
     frequency: "",
     onsetYears: null,
     repairCost: [100, 200],
+    preventable: false,
     basis: "estimate",
     difficulty: "medium",
     sourceIds: [],
