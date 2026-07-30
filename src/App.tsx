@@ -2,12 +2,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnalysisReport } from "./components/AnalysisReport";
 import { LoadingSteps } from "./components/LoadingSteps";
 import { SearchHero } from "./components/SearchHero";
+import { RecentAnalyses } from "./components/RecentAnalyses";
 import { StateNotice } from "./components/StateNotice";
 import { analyze, type FailureReason } from "./lib/api";
 import { parseQuery, type ParsedQuery } from "./lib/query";
 import type { AnalysisEvidence } from "../shared/analysis";
 import { VERDICT } from "../shared/format";
 import { scoreAnalysis } from "../shared/scoring";
+import { clearHistory, readHistory, recordAnalysis, type HistoryEntry } from "./lib/history";
 import { useDocumentTitle } from "./lib/useDocumentTitle";
 
 type View =
@@ -41,6 +43,7 @@ function syncUrl(query: string | null): void {
 
 export default function App() {
   const [view, setView] = useState<View>({ kind: "idle" });
+  const [history, setHistory] = useState<HistoryEntry[]>(readHistory);
   const lastQuery = useRef<string>("");
   const inFlight = useRef<AbortController | null>(null);
 
@@ -60,11 +63,20 @@ export default function App() {
       const outcome = await analyze(parsed.product, controller.signal);
       if (controller.signal.aborted) return;
 
-      setView(
-        outcome.status === "ready"
-          ? { kind: "ready", evidence: outcome.evidence, query: parsed, live: outcome.live }
-          : { kind: "failed", reason: outcome.reason },
-      );
+      if (outcome.status === "ready") {
+        const score = scoreAnalysis(outcome.evidence);
+        setHistory(
+          recordAnalysis({
+            query: raw,
+            model: outcome.evidence.product.model,
+            verdict: score.verdict,
+            risk: score.ownershipRisk,
+          }),
+        );
+        setView({ kind: "ready", evidence: outcome.evidence, query: parsed, live: outcome.live });
+      } else {
+        setView({ kind: "failed", reason: outcome.reason });
+      }
     } catch {
       // An abort means a newer search took over and owns the view now.
       // Anything else must surface, or the user is stranded on the spinner.
@@ -86,8 +98,14 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      {/* Balances the empty space so the idle hero sits centred, not stranded. */}
-      {view.kind === "idle" && <div className="flex-1" aria-hidden="true" />}
+      {/*
+        Balances the empty space so an empty landing page sits centred rather
+        than stranded at the top. With a shortlist below, the page has content
+        of its own and the hero belongs at the top.
+      */}
+      {view.kind === "idle" && history.length === 0 && (
+        <div className="flex-1" aria-hidden="true" />
+      )}
 
       <SearchHero
         onSearch={(query) => void runSearch(query)}
@@ -96,6 +114,19 @@ export default function App() {
       />
 
       <main className="flex-1">
+        {view.kind === "idle" && (
+          <div className="px-4">
+            <RecentAnalyses
+              entries={history}
+              onPick={(query) => void runSearch(query)}
+              onClear={() => {
+                clearHistory();
+                setHistory([]);
+              }}
+            />
+          </div>
+        )}
+
         {view.kind === "loading" && <LoadingSteps />}
 
         {view.kind === "failed" && (
