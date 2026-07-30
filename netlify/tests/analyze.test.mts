@@ -1,3 +1,14 @@
+/**
+ * Tests for the analysis endpoint.
+ *
+ * These live outside `netlify/functions/` on purpose: Netlify deploys every
+ * file in that directory as a serverless function, so a test file there is
+ * bundled and shipped, and the deploy fails on its dev-only imports.
+ *
+ * The `../lib/store` mock path resolves to the same module the handler
+ * imports, because both files sit one level under `netlify/`.
+ */
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Context } from "@netlify/functions";
 import type { Job } from "../lib/store";
@@ -13,7 +24,7 @@ const store = vi.hoisted(() => ({
 
 vi.mock("../lib/store", () => store);
 
-const { default: handler } = await import("./analyze.mjs");
+const { default: handler } = await import("../functions/analyze.mjs");
 
 const ENDPOINT = "https://example.com/api/v1/analyses";
 
@@ -166,6 +177,22 @@ describe("GET /api/v1/analyses/:id", () => {
 
   it("returns not found for a job that expired or never existed", async () => {
     expect((await handler(get(), context({ id: "job-1" }))).status).toBe(404);
+  });
+});
+
+describe("deployable shape", () => {
+  it("keeps the functions directory free of anything that is not a function", async () => {
+    const { readdirSync } = await import("node:fs");
+    const { dirname, join } = await import("node:path");
+    const { fileURLToPath } = await import("node:url");
+
+    const functionsDir = join(dirname(fileURLToPath(import.meta.url)), "..", "functions");
+    const entries = readdirSync(functionsDir);
+
+    // Netlify deploys every file here. A test or helper file in this directory
+    // is bundled as a function and fails the deploy on its dev-only imports.
+    expect(entries.filter((name) => /\.(test|spec)\./.test(name))).toEqual([]);
+    expect(entries.sort()).toEqual(["analyze-background.mts", "analyze.mts"]);
   });
 });
 
