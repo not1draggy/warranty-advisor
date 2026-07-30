@@ -189,24 +189,50 @@ export function compareCandidates(candidates: Candidate[], now: Date = new Date(
     };
   }
 
-  let basis: ComparisonBasis;
-  if (best.score.verdict !== runnerUp.score.verdict) {
-    basis = "verdict";
-  } else if (Math.abs(best.score.ownershipRisk - runnerUp.score.ownershipRisk) >= RISK_NOISE) {
-    basis = "risk";
-  } else {
-    const cheaper = Math.min(best.totalCost, runnerUp.totalCost);
-    const spread = Math.abs(best.totalCost - runnerUp.totalCost);
-    basis = spread > Math.max(1, cheaper) * COST_NOISE_RATIO ? "cost" : "tie";
-  }
+  /**
+   * Everything still genuinely in contention: the best verdict, and a risk
+   * within noise of the lowest.
+   *
+   * This has to look at the whole field, not just the top two. With three
+   * candidates the sort puts the lowest risk first, so the cheapest of an
+   * otherwise indistinguishable set can sit in third place — and deciding on
+   * cost between the first two would recommend a product that is dearer than
+   * one no riskier than it.
+   */
+  const lowestRisk = Math.min(
+    ...ranked
+      .filter((c) => c.score.verdict === best.score.verdict)
+      .map((c) => c.score.ownershipRisk),
+  );
+  const contenders = ranked.filter(
+    (c) =>
+      c.score.verdict === best.score.verdict &&
+      c.score.ownershipRisk - lowestRisk < RISK_NOISE,
+  );
 
-  // On cost the ordering above may have the wrong one first: it sorts on risk
-  // before cost, and here risk has just been ruled a draw.
-  if (basis === "cost" && runnerUp.totalCost < best.totalCost) {
-    ranked[0] = runnerUp;
-    ranked[1] = best;
-    ranked[0].rank = 1;
-    ranked[1].rank = 1;
+  let basis: ComparisonBasis;
+  if (contenders.length < 2) {
+    // One candidate stands clear: either on the verdict or on risk alone.
+    basis = best.score.verdict !== runnerUp.score.verdict ? "verdict" : "risk";
+  } else {
+    const cheapest = [...contenders].sort((a, b) => a.totalCost - b.totalCost)[0];
+    const dearest = [...contenders].sort((a, b) => b.totalCost - a.totalCost)[0];
+    const spread = dearest.totalCost - cheapest.totalCost;
+
+    if (spread > Math.max(1, cheapest.totalCost) * COST_NOISE_RATIO) {
+      basis = "cost";
+      // The sort ordered on risk before cost, and risk has just been ruled a
+      // draw, so the cheapest contender belongs at the front.
+      const at = ranked.indexOf(cheapest);
+      if (at > 0) {
+        ranked.splice(at, 1);
+        ranked.unshift(cheapest);
+        // Everything in contention drew on risk, so they share the top rank.
+        for (const contender of contenders) contender.rank = 1;
+      }
+    } else {
+      basis = "tie";
+    }
   }
 
   const [first, second] = ranked;

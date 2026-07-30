@@ -145,6 +145,43 @@ describe("picking between candidates", () => {
   });
 });
 
+describe("a close field of three", () => {
+  it("does not overlook a cheaper candidate sitting in third place", () => {
+    // Sorted on risk, the cheapest of an indistinguishable set can land last.
+    // Deciding cost between the top two would recommend a product dearer than
+    // one no riskier than it.
+    const a = candidate("Prvý", { price: 900 });
+    const b = candidate("Druhý", { price: 800 });
+    const c = candidate("Tretí", { price: 500 });
+
+    const result = compareCandidates([a, b, c], NOW);
+
+    expect(result.basis).toBe("cost");
+    expect(result.winner?.evidence.product.model).toBe("Tretí");
+    expect(result.candidates[0].evidence.product.model).toBe("Tretí");
+  });
+
+  it("ignores a cheap candidate that is genuinely riskier", () => {
+    // Cheapness only decides among candidates the risk could not separate.
+    const safe = candidate("Bezpečný", { price: 900, probability: 10, repairCost: [80, 120] });
+    const cheapRisky = candidate("Lacný", { price: 300, probability: 85, repairCost: [400, 500] });
+
+    const result = compareCandidates([safe, cheapRisky], NOW);
+
+    expect(result.winner?.evidence.product.model).toBe("Bezpečný");
+    expect(result.basis).not.toBe("cost");
+  });
+
+  it("keeps every drawn candidate at the same rank after reordering", () => {
+    const result = compareCandidates(
+      [candidate("A", { price: 900 }), candidate("B", { price: 800 }), candidate("C", { price: 500 })],
+      NOW,
+    );
+
+    expect(result.candidates.map((c) => c.rank)).toEqual([1, 1, 1]);
+  });
+});
+
 describe("candidates that are not alternatives", () => {
   it("declines to pick between different categories", () => {
     // Nobody chooses between a washing machine and a television. Naming a
