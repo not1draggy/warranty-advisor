@@ -114,20 +114,20 @@ export function ComparisonView({ candidates }: { candidates: Candidate[] }) {
 
       <Section title="Porovnanie">
         <Card className="overflow-x-auto">
-          <table className="w-full min-w-[32rem] border-collapse text-[0.9375rem]">
+          <table className="w-full min-w-[21rem] border-collapse text-sm sm:min-w-[32rem] sm:text-[0.9375rem]">
             <caption className="sr-only">
               Porovnanie hodnotenia, nákladov a opraviteľnosti kandidátov
             </caption>
             <thead>
               <tr>
-                <th scope="col" className="w-40 pb-3 text-left align-bottom text-xs font-medium tracking-wide text-subtle uppercase">
+                <th scope="col" className="w-24 pb-3 text-left align-bottom text-xs font-medium tracking-wide text-subtle uppercase sm:w-40">
                   Ukazovateľ
                 </th>
                 {ranked.map((candidate) => (
                   <th
                     key={candidate.query}
                     scope="col"
-                    className="pb-3 pl-4 text-left align-bottom font-normal"
+                    className="pb-3 pl-3 text-left align-bottom font-normal sm:pl-4"
                   >
                     <Heading
                       candidate={candidate}
@@ -142,7 +142,7 @@ export function ComparisonView({ candidates }: { candidates: Candidate[] }) {
                 const best = bestValue(row);
                 return (
                   <tr key={row.label} className="border-t border-line">
-                    <th scope="row" className="py-3 pr-4 text-left text-sm font-normal text-muted">
+                    <th scope="row" className="py-3 pr-3 text-left text-xs font-normal text-muted sm:pr-4 sm:text-sm">
                       {row.label}
                     </th>
                     {ranked.map((candidate) => {
@@ -150,7 +150,7 @@ export function ComparisonView({ candidates }: { candidates: Candidate[] }) {
                       return (
                         <td
                           key={candidate.query}
-                          className={`py-3 pl-4 tabular-nums ${strongest ? "font-semibold text-good" : ""}`}
+                          className={`py-3 pl-3 tabular-nums sm:pl-4 ${strongest ? "font-semibold text-good" : ""}`}
                         >
                           {row.value(candidate)}
                           {strongest && <span className="sr-only"> — najlepšia hodnota</span>}
@@ -163,6 +163,13 @@ export function ComparisonView({ candidates }: { candidates: Candidate[] }) {
             </tbody>
           </table>
         </Card>
+        {ranked.length > 2 && (
+          // Two fit a phone; three do not, and a column nobody knows is there
+          // is a column nobody reads.
+          <p className="mt-2 text-xs text-subtle sm:hidden">
+            Tabuľku potiahnite do strany pre ďalšieho kandidáta.
+          </p>
+        )}
       </Section>
 
       <Section title="Celé analýzy">
