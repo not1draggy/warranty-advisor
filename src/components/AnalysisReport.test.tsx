@@ -123,6 +123,17 @@ describe("the analysis a buyer is handed", () => {
   });
 });
 
+describe("the span the estimates cover", () => {
+  it("names the service life beside the lifetime repair figure", () => {
+    const rendered = text(render());
+    const life = evidence.product.serviceLifeYears;
+
+    expect(rendered).toContain(`${life} rokov`);
+    // The bare word tells the reader nothing they can use.
+    expect(rendered).not.toContain("opravy počas životnosti");
+  });
+});
+
 describe("the price the report rests on", () => {
   it("always shows which price the totals were built from", () => {
     expect(text(render())).toContain("odhad bežnej trhovej ceny");
