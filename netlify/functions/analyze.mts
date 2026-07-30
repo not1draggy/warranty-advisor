@@ -56,8 +56,11 @@ async function handlePost(request: Request) {
   }
 
   const id = jobId(query);
+  // A finished or running analysis is reused, but a failure never is: asking
+  // again is the user retrying, and they must get fresh research rather than
+  // the error that was cached moments ago.
   const existing = await readJob(id);
-  if (existing) return json(present(existing));
+  if (existing && existing.status !== "failed") return json(present(existing));
 
   if (!(await allowRequest(clientIp(request), RATE_LIMIT))) {
     return json({ error: "rate_limited" }, 429);

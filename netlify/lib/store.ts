@@ -30,6 +30,12 @@ const RATE_LIMIT_STORE = "rate-limits";
 export const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 /** A job still pending after this is assumed dead and may be restarted. */
 export const JOB_TIMEOUT_MS = 4 * 60 * 1000;
+/**
+ * Failures live only long enough for the polling client to collect the
+ * outcome. A cached failure that outlived that would keep answering for a
+ * product nobody has actually re-examined.
+ */
+export const FAILURE_TTL_MS = 2 * 60 * 1000;
 
 
 export function jobId(query: string): string {
@@ -44,6 +50,7 @@ export async function readJob(id: string): Promise<Job | null> {
   if (job.status === "ready" && age > CACHE_TTL_MS) return null;
   // A pending job whose worker died would otherwise block the query forever.
   if (job.status === "pending" && age > JOB_TIMEOUT_MS) return null;
+  if (job.status === "failed" && age > FAILURE_TTL_MS) return null;
 
   return job;
 }

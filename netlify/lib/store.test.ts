@@ -16,6 +16,7 @@ vi.mock("@netlify/blobs", () => ({
 
 const {
   CACHE_TTL_MS,
+  FAILURE_TTL_MS,
   JOB_TIMEOUT_MS,
   allowRequest,
   clientIp,
@@ -83,6 +84,19 @@ describe("readJob", () => {
 
     vi.advanceTimersByTime(JOB_TIMEOUT_MS + 1_000);
     expect(await readJob("b")).toBeNull();
+  });
+
+  it("stops serving a stale failure so the product can be examined again", async () => {
+    await writeJob({
+      id: "d",
+      query: "x",
+      status: "failed",
+      reason: "upstream_error",
+      createdAt: Date.now(),
+    });
+
+    vi.advanceTimersByTime(FAILURE_TTL_MS + 1_000);
+    expect(await readJob("d")).toBeNull();
   });
 
   it("keeps a failure readable so the client can report it", async () => {
