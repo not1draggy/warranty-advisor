@@ -99,6 +99,16 @@ niečo urobiť, preto má vlastný štítok a nie je schovaný v texte. Normaliz
 ho nikdy neodvodzuje: tvrdiť, že porucha bola odvrátiteľná, keď to nikto
 nepovedal, presúva vinu na majiteľa za chybu, ktorej zabrániť nemohol.
 
+### Ochrana súkromia
+
+V pätke je vysvetlené, čo si stránka ukladá: žiadne cookies, žiadna analytika,
+žiadne skripty tretích strán (vynucuje to CSP), zoznam posledných dopytov iba
+v prehliadači, sedemdňová cache analýz a limit na skrátený hash IP adresy.
+
+Každé tvrdenie bolo overené proti bežiacej aplikácii, nie proti zámeru — a testy
+ho viažu na kód, takže zmena, ktorá text spraví nepravdivým, zhodí test. Vyhlásenie
+o súkromí, ktoré opisuje úmysel, je horšie než žiadne, lebo mu ľudia veria.
+
 ### Prístupnosť
 
 Sedem obrazoviek — úvod, hotová analýza, porovnanie, chybové hlásenie — v tmavom aj svetlom
@@ -129,7 +139,7 @@ pravdepodobnosti nesie názov svojej poruchy. Priebeh analýzy je živá oblasť
 ```bash
 npm install
 npm run dev     # rozhranie na ukážkových dátach
-npm test        # 338 testov: hodnotenie, normalizácia, úložisko, API, jazyk
+npm test        # 344 testov: hodnotenie, normalizácia, úložisko, API, jazyk
 npm run build   # kontrola typov + produkčný build
 npm run test:coverage  # pokrytie podľa vrstiev
 ```

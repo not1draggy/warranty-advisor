@@ -3,6 +3,7 @@ import { AnalysisReport } from "./components/AnalysisReport";
 import { ComparisonView } from "./components/ComparisonView";
 import { HowItWorks } from "./components/HowItWorks";
 import { LoadingSteps } from "./components/LoadingSteps";
+import { PrivacyNote } from "./components/PrivacyNote";
 import { SearchHero } from "./components/SearchHero";
 import { RecentAnalyses } from "./components/RecentAnalyses";
 import { StateNotice } from "./components/StateNotice";
@@ -153,8 +154,11 @@ export default function App() {
         {view.kind === "compared" && <ComparisonView candidates={view.candidates} />}
       </main>
 
-      <footer className="border-t border-line py-6 text-center text-xs text-subtle print:hidden">
-        Warranty Advisor · {new Date().getFullYear()}
+      <footer className="border-t border-line pt-8 print:hidden">
+        <PrivacyNote />
+        <p className="pb-6 text-center text-xs text-subtle">
+          Warranty Advisor · {new Date().getFullYear()}
+        </p>
       </footer>
     </div>
   );
