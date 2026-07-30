@@ -151,6 +151,14 @@ describe("job lifetime against the client's patience", () => {
     it("expires a failure well before the job it belongs to", () => {
       expect(FAILURE_TTL_MS).toBeLessThan(JOB_TIMEOUT_MS);
     });
+
+    it("gives up on the research before the job it belongs to is presumed dead", async () => {
+      // The expensive ordering. If a run could still be going after its job
+      // has aged out, a retry looks like a fresh query and dispatches a second
+      // worker — paying twice while the first one is still working.
+      const { RESEARCH_TIMEOUT_MS } = await import("../functions/analyze-background.mjs");
+      expect(RESEARCH_TIMEOUT_MS).toBeLessThan(JOB_TIMEOUT_MS);
+    });
 });
 
 describe("allowRequest", () => {

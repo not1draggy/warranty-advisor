@@ -86,7 +86,7 @@ v jednotlivých kategóriách — či je vaňa zvarená, či je chladiaci okruh 
 ```bash
 npm install
 npm run dev     # rozhranie na ukážkových dátach
-npm test        # 268 testov: hodnotenie, normalizácia, úložisko, API, jazyk
+npm test        # 269 testov: hodnotenie, normalizácia, úložisko, API, jazyk
 npm run build   # kontrola typov + produkčný build
 ```
 
@@ -101,6 +101,21 @@ funguje celé, ale analýzy sú vopred pripravené a sú tak aj označené.
    Bez nich sa výskum nespustí a rozhranie zostane v ukážkovom režime.
 4. Voliteľne nastav `DAILY_RESEARCH_LIMIT` — koľko nových analýz denne je web
    ochotný zaplatiť (predvolene 200).
+
+### Časovanie
+
+Štyri limity, ktoré dávajú zmysel len spolu:
+
+| Limit | Hodnota | Prečo |
+| ----- | ------- | ----- |
+| Výskum sa preruší | 8 min | Aby hlásil chybu skôr, než ho zabije platforma |
+| Prehliadač prestane čakať | 5 min | Ponúkne opakovanie, úloha medzitým beží ďalej |
+| Úloha sa považuje za mŕtvu | 10 min | Až potom smie nový dopyt spustiť výskum znova |
+| Funkcia na pozadí (platforma) | 15 min | Tvrdý strop, ktorý nemáme pod kontrolou |
+
+Poradie je podstatné: žiadna vrstva nesmie vyhlásiť úlohu za mŕtvu, kým na nej
+iná ešte pracuje. Inak opakovanie vyzerá ako nový dopyt a zaplatí sa ten istý
+výskum dvakrát. Stráži to test.
 
 ### Strop denných nákladov
 

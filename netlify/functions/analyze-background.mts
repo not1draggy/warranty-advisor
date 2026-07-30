@@ -29,7 +29,7 @@ const MAX_SEARCHES = 6;
  * Comfortably inside the fifteen minutes a background function is allowed, and
  * far enough beyond a normal run to never cut a slow one short.
  */
-const RESEARCH_TIMEOUT_MS = 8 * 60 * 1000;
+export const RESEARCH_TIMEOUT_MS = 8 * 60 * 1000;
 
 /**
  * Dynamic-filtering web search. The installed SDK's `ToolUnion` still only
