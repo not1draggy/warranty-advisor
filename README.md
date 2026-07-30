@@ -82,6 +82,20 @@ svoju históriu bez ohľadu na logo na dvierkach. Prompt zároveň vie, na čo s
 v jednotlivých kategóriách — či je vaňa zvarená, či je chladiaci okruh hermetický,
 či ide o podsvietenie alebo o samotný panel.
 
+### Trh, v ktorom kupujúci naozaj je
+
+Dva fakty menia odpoveď a v žiadnom produktovom liste nie sú.
+
+Dostupnosť dielov nie je len otázka ochoty výrobcu — ekodizajnové predpisy EÚ
+ukladajú povinnosť dodávať kľúčové diely na sedem až desať rokov od konca
+predaja. Model stiahnutý pred deviatimi rokmi je preto iný prípad než model,
+ktorý sa ešte predáva, nech už predajca dielov práve ponúka čokoľvek.
+
+Voda je na väčšine Slovenska tvrdá. Pri všetkom, čo ohrieva vodu, je vodný
+kameň hlavnou príčinou porúch telesa a čerpadla a prichádza skôr než v krajinách
+s mäkkou vodou. Prompt zároveň žiada povedať, ktorá porucha sa dá odvrátiť
+údržbou — to je jediný druh rizika, s ktorým kupujúci môže sám niečo urobiť.
+
 ### Prístupnosť
 
 Sedem obrazoviek — úvod, hotová analýza, porovnanie, chybové hlásenie — v tmavom aj svetlom
@@ -112,7 +126,7 @@ pravdepodobnosti nesie názov svojej poruchy. Priebeh analýzy je živá oblasť
 ```bash
 npm install
 npm run dev     # rozhranie na ukážkových dátach
-npm test        # 326 testov: hodnotenie, normalizácia, úložisko, API, jazyk
+npm test        # 328 testov: hodnotenie, normalizácia, úložisko, API, jazyk
 npm run build   # kontrola typov + produkčný build
 npm run test:coverage  # pokrytie podľa vrstiev
 ```

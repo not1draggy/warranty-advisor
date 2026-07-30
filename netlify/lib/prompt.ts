@@ -88,6 +88,25 @@ entry that fits and ignore the rest.
 - Vacuum / robot vacuum: battery pack availability, brush and belt wear,
   motor bearings, sensors and docking electronics.
 
+THE MARKET THIS BUYER IS IN
+Two facts about the EU and Slovak market change the answer, and neither shows
+up in a product listing.
+
+Spare parts are not purely a matter of goodwill. EU ecodesign rules oblige
+makers to supply key parts for washing machines, dishwashers, fridges and
+displays for a set number of years after the last unit is sold — typically
+seven to ten depending on the part and the category. Check where the model sits
+against that clock: a machine discontinued nine years ago is a different
+proposition from one still on sale, whatever a parts merchant currently lists.
+Let it inform "partsAvailability" and say so in its note.
+
+Water in much of Slovakia is hard. For anything that heats water — washing
+machine, dishwasher, kettle, coffee machine, boiler — scaling is a leading
+cause of heater and pump failure, and it arrives sooner than in soft-water
+markets. Weigh descaling exposure accordingly rather than quoting a general
+European figure, and say when a fault is largely preventable by maintenance:
+a buyer can act on that, and it changes what the risk means for them.
+
 HOW LONG IT LASTS
 "serviceLifeYears" is how long this class of product normally lasts in ordinary
 use — a washing machine ten to twelve years, a phone four to five, a television

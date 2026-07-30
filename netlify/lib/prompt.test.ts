@@ -140,6 +140,23 @@ describe("system prompt", () => {
     expect(SYSTEM_PROMPT).toContain("closest current equivalent");
   });
 
+  it("knows the market this buyer is actually in", () => {
+    // Two facts that change the answer and appear in no product listing.
+    expect(SYSTEM_PROMPT).toContain("THE MARKET THIS BUYER IS IN");
+    // Parts obligations put a clock on availability that a merchant listing
+    // does not show.
+    expect(SYSTEM_PROMPT).toMatch(/ecodesign/i);
+    // Hard water moves scaling failures earlier than a European average.
+    expect(SYSTEM_PROMPT).toMatch(/hard/i);
+    expect(SYSTEM_PROMPT).toMatch(/scaling/i);
+  });
+
+  it("asks which faults the owner could have prevented", () => {
+    // A preventable fault changes what the risk means to a buyer, because it
+    // is the one kind they can act on.
+    expect(SYSTEM_PROMPT).toContain("preventable by maintenance");
+  });
+
   it("refuses invented citations and prices", () => {
     expect(SYSTEM_PROMPT).toContain("Never invent a URL");
     expect(SYSTEM_PROMPT).toContain("Never invent a price");
