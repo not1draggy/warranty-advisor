@@ -130,11 +130,7 @@ export default function App() {
         {view.kind === "loading" && <LoadingSteps />}
 
         {view.kind === "failed" && (
-          <StateNotice
-            reason={view.reason}
-            onRetry={() => void runSearch(lastQuery.current)}
-            onPick={(query) => void runSearch(query)}
-          />
+          <StateNotice reason={view.reason} onRetry={() => void runSearch(lastQuery.current)} />
         )}
 
         {view.kind === "ready" && (

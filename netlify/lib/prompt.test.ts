@@ -54,6 +54,7 @@ describe("analysis schema", () => {
         "evidenceNote",
         "failures",
         "goodFor",
+        "isProduct",
         "notGoodFor",
         "ownerExperience",
         "partsAvailability",
@@ -67,6 +68,11 @@ describe("analysis schema", () => {
         "worstCase",
       ].sort(),
     );
+  });
+
+  it("gates on whether the query names a product at all", () => {
+    expect(schema.properties).toHaveProperty("isProduct");
+    expect(schema.required).toContain("isProduct");
   });
 
   it("asks for every failure field the normaliser reads", () => {
@@ -110,6 +116,12 @@ describe("system prompt", () => {
     // possible when the exact model returns nothing.
     expect(SYSTEM_PROMPT).toMatch(/compressor/i);
     expect(SYSTEM_PROMPT).toMatch(/pump/i);
+  });
+
+  it("reserves the not-a-product flag for input that names no device", () => {
+    // A bare category or a brand with no model must still get an analysis.
+    expect(SYSTEM_PROMPT).toContain("IS THIS EVEN A PRODUCT");
+    expect(SYSTEM_PROMPT).toContain("Refusing a thin query is the one thing you must");
   });
 
   it("refuses invented citations and prices", () => {

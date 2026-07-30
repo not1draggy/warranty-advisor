@@ -15,6 +15,7 @@ export type FailureReason =
   | "timeout"
   | "network"
   | "refused"
+  | "not_a_product"
   | "unusable_response"
   | "upstream_error";
 
@@ -40,6 +41,7 @@ const FAILURE_REASONS: readonly FailureReason[] = [
   "timeout",
   "network",
   "refused",
+  "not_a_product",
   "unusable_response",
   "upstream_error",
 ];

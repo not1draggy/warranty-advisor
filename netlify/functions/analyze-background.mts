@@ -73,6 +73,18 @@ export default async (request: Request): Promise<Response> => {
       return new Response(null, { status: 200 });
     }
 
+    // The query named no appliance at all — say so rather than inventing a
+    // verdict about nothing. Thin evidence about a real product never lands here.
+    if (
+      typeof result.parsed === "object" &&
+      result.parsed !== null &&
+      (result.parsed as { isProduct?: unknown }).isProduct === false
+    ) {
+      log("analysis_not_a_product", { id });
+      await writeJob({ ...job, status: "failed", reason: "not_a_product" });
+      return new Response(null, { status: 200 });
+    }
+
     const evidence = normalizeEvidence(result.parsed, job.query);
     if (!evidence) {
       log("analysis_unusable", { id, ms: Date.now() - startedAt });

@@ -42,6 +42,13 @@ Set "matchLevel" honestly:
                identical previous generation.
 - "category" — you found little beyond platform, component and brand knowledge.
 
+IS THIS EVEN A PRODUCT
+Set "isProduct" to false only when the query names no appliance or electronic
+device at all — a greeting, a question, gibberish. A brand with no model, or a
+bare category such as "práčka", IS a product query: answer it at category level
+with "matchLevel": "category". Refusing a thin query is the one thing you must
+never do; this flag exists solely to catch input that is not a product at all.
+
 WHAT TO INTERROGATE PER CATEGORY
 These are the questions to research, not conclusions to assert. Apply the
 entry that fits and ignore the rest.
@@ -118,6 +125,7 @@ export const ANALYSIS_SCHEMA = {
   type: "object",
   additionalProperties: false,
   required: [
+    "isProduct",
     "product",
     "evidenceNote",
     "failures",
@@ -135,6 +143,11 @@ export const ANALYSIS_SCHEMA = {
     "sources",
   ],
   properties: {
+    isProduct: {
+      type: "boolean",
+      description:
+        "false iba vtedy, ak dopyt vôbec nepomenúva spotrebič ani elektroniku (napríklad pozdrav alebo nezmyselný text). Značka bez modelu alebo samotná kategória sú stále výrobok — vtedy vráť true a nastav matchLevel na \"category\".",
+    },
     product: {
       type: "object",
       additionalProperties: false,

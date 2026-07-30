@@ -43,6 +43,7 @@ const pendingJob: Job = {
 
 /** A payload complete enough to survive normalisation. */
 const evidencePayload = {
+  isProduct: true,
   product: {
     brand: "Bosch",
     model: "WAN28160BY",
@@ -161,6 +162,29 @@ describe("outcomes", () => {
 
     const stored = store.writeJob.mock.calls[0][0];
     expect(stored.evidence.failures[0].probability).toBe(95);
+  });
+
+  it("says the query names no product rather than inventing a verdict", async () => {
+    model.finalMessage.mockResolvedValue(
+      reply(JSON.stringify({ ...evidencePayload, isProduct: false })),
+    );
+
+    await dispatch();
+
+    expect(store.writeJob).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "failed", reason: "not_a_product" }),
+    );
+  });
+
+  it("still analyses a product known only at category level", async () => {
+    const thin = structuredClone(evidencePayload);
+    thin.product.matchLevel = "category";
+    model.finalMessage.mockResolvedValue(reply(JSON.stringify(thin)));
+
+    await dispatch();
+
+    // Thin evidence about a real product is never a not-a-product outcome.
+    expect(store.writeJob).toHaveBeenCalledWith(expect.objectContaining({ status: "ready" }));
   });
 
   it("records a refusal instead of writing an empty analysis", async () => {

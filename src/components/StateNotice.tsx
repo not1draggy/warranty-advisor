@@ -1,5 +1,4 @@
 import type { FailureReason } from "../lib/api";
-import { EXAMPLE_QUERIES } from "../lib/query";
 
 /**
  * Copy for states where no analysis exists yet.
@@ -10,7 +9,7 @@ import { EXAMPLE_QUERIES } from "../lib/query";
 const MESSAGES: Record<FailureReason, { title: string; body: string }> = {
   unavailable: {
     title: "Živá analýza zatiaľ nie je zapnutá",
-    body: "Táto inštalácia nemá nastavený prístup k analytickej službe. Vyskúšajte niektorý z ukážkových výrobkov nižšie.",
+    body: "Táto inštalácia nemá nastavený prístup k analytickej službe. Vyskúšajte niektorý z ukážkových výrobkov vyššie.",
   },
   rate_limited: {
     title: "Priveľa požiadaviek za sebou",
@@ -28,6 +27,10 @@ const MESSAGES: Record<FailureReason, { title: string; body: string }> = {
     title: "Túto požiadavku nedokážeme spracovať",
     body: "Skúste zadať konkrétny model spotrebiča alebo elektroniky.",
   },
+  not_a_product: {
+    title: "Toto zatiaľ nevyzerá ako výrobok",
+    body: "Zadajte značku a model spotrebiča alebo elektroniky. Stačí aj samotná značka s kategóriou — napríklad „práčka Bosch“.",
+  },
   unusable_response: {
     title: "Analýzu sa nepodarilo dokončiť",
     body: "Skúste to prosím znova, prípadne zadajte presnejšie označenie modelu.",
@@ -38,15 +41,26 @@ const MESSAGES: Record<FailureReason, { title: string; body: string }> = {
   },
 };
 
+/**
+ * Reasons a fresh attempt could plausibly succeed. The rest need the user to
+ * type something different, and the search box directly above — with its
+ * example queries — is already the affordance for that.
+ */
+const RETRYABLE: ReadonlySet<FailureReason> = new Set<FailureReason>([
+  "rate_limited",
+  "timeout",
+  "network",
+  "unusable_response",
+  "upstream_error",
+]);
+
 interface Props {
   reason: FailureReason;
   onRetry: () => void;
-  onPick: (query: string) => void;
 }
 
-export function StateNotice({ reason, onRetry, onPick }: Props) {
+export function StateNotice({ reason, onRetry }: Props) {
   const { title, body } = MESSAGES[reason];
-  const showExamples = reason === "unavailable";
 
   return (
     <div className="mx-auto w-full max-w-md px-4 py-6">
@@ -54,20 +68,7 @@ export function StateNotice({ reason, onRetry, onPick }: Props) {
         <h2 className="font-medium">{title}</h2>
         <p className="mt-2 text-sm leading-relaxed text-muted">{body}</p>
 
-        {showExamples ? (
-          <div className="mt-5 flex flex-wrap justify-center gap-2">
-            {EXAMPLE_QUERIES.map((example) => (
-              <button
-                key={example}
-                type="button"
-                onClick={() => onPick(example)}
-                className="rounded-full border border-line px-4 py-1.5 text-xs text-muted transition hover:border-accent hover:text-accent"
-              >
-                {example}
-              </button>
-            ))}
-          </div>
-        ) : (
+        {RETRYABLE.has(reason) && (
           <button
             type="button"
             onClick={onRetry}
