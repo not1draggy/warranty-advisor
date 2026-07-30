@@ -267,3 +267,34 @@ describe("a research call that never returns", () => {
     );
   });
 });
+
+describe("faults in the worker's own bookkeeping", () => {
+  it("still records a failure when something throws a non-Error", () => {
+    // Libraries do throw strings. If building the log line threw inside the
+    // catch, no job would ever be written and the user would wait out the
+    // whole job timeout for an answer that had already failed.
+    model.finalMessage.mockRejectedValue("upstream exploded");
+
+    return dispatch().then(() => {
+      expect(store.writeJob).toHaveBeenLastCalledWith(
+        expect.objectContaining({ status: "failed", reason: "upstream_error" }),
+      );
+    });
+  });
+
+  it("does not throw away a finished analysis over a missing usage field", async () => {
+    // The search count is a log detail. Were it read unguarded, an answer that
+    // cost minutes and money would be discarded for want of a number nobody
+    // reads.
+    model.finalMessage.mockResolvedValue({
+      ...reply(JSON.stringify(evidencePayload)),
+      usage: { input_tokens: 10, output_tokens: 20 },
+    });
+
+    await dispatch();
+
+    expect(store.writeJob).toHaveBeenLastCalledWith(
+      expect.objectContaining({ status: "ready" }),
+    );
+  });
+});

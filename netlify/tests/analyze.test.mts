@@ -272,6 +272,16 @@ describe("routing", () => {
     expect((await handler(new Request(ENDPOINT), context())).status).toBe(405);
   });
 
+  it("survives a fault that is not an Error object", async () => {
+    // The handler's own error logging must not become a second failure.
+    store.readJob.mockRejectedValue("blobs exploded");
+
+    const response = await handler(post({ query: "Bosch WAN28160BY" }), context());
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toMatchObject({ error: "internal_error" });
+  });
+
   it("turns an unexpected fault into a clean error rather than a crash", async () => {
     store.readJob.mockRejectedValue(new Error("blobs unavailable"));
 
