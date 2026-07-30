@@ -67,6 +67,17 @@ svoju históriu bez ohľadu na logo na dvierkach. Prompt zároveň vie, na čo s
 v jednotlivých kategóriách — či je vaňa zvarená, či je chladiaci okruh hermetický,
 či ide o podsvietenie alebo o samotný panel.
 
+### Prístupnosť
+
+Päť obrazoviek — úvod, hotová analýza, chybové hlásenie — v tmavom aj svetlom
+režime prechádza auditom axe-core (WCAG 2.1 AA) bez jedinej námietky. Kontrast
+palety bol kvôli tomu prepracovaný.
+
+Grafické prvky, ktoré samy o sebe nič nehovoria, majú textové znenie: oblúk
+rizika sa číta ako „Riziko vlastníctva 43 zo 100“ a každý ukazovateľ
+pravdepodobnosti nesie názov svojej poruchy. Priebeh analýzy je živá oblasť
+(`aria-live`), takže sa ohlási aj bez sledovania obrazovky.
+
 ## Štruktúra
 
 | Priečinok            | Obsah                                                          |
