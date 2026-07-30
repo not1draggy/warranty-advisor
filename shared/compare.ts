@@ -57,9 +57,9 @@ export interface Comparison {
 }
 
 /** Ownership-risk points below which two products are the same product. */
-const RISK_NOISE = 6;
+export const RISK_NOISE = 6;
 /** Total-cost difference below which the cheaper one is not actually cheaper. */
-const COST_NOISE_RATIO = 0.05;
+export const COST_NOISE_RATIO = 0.05;
 
 const VERDICT_ORDER: Record<VerdictKind, number> = { buy: 0, caution: 1, avoid: 2 };
 
@@ -148,6 +148,38 @@ function explain(best: RankedCandidate, runnerUp: RankedCandidate, basis: Compar
   return reasons;
 }
 
+/** Is the cost gap wide enough to be a difference rather than rounding? */
+function meaningfullyCheaper(cheaper: RankedCandidate, dearer: RankedCandidate): boolean {
+  return dearer.totalCost - cheaper.totalCost > Math.max(1, cheaper.totalCost) * COST_NOISE_RATIO;
+}
+
+/**
+ * Does `a` beat `b` on the comparison's own stated terms?
+ *
+ * Deliberately expressed as domination rather than as a sort. Ranking by risk
+ * and then breaking ties on cost looks equivalent and is not: "within noise"
+ * is not transitive, so a window drawn around the lowest risk can exclude a
+ * candidate that is within noise of the eventual winner and cheaper than it.
+ * Asking directly whether anything beats a candidate has no such gap.
+ */
+function beats(a: RankedCandidate, b: RankedCandidate): boolean {
+  if (a === b) return false;
+  if (VERDICT_ORDER[a.score.verdict] < VERDICT_ORDER[b.score.verdict]) return true;
+  if (a.score.verdict !== b.score.verdict) return false;
+
+  const riskGap = b.score.ownershipRisk - a.score.ownershipRisk;
+  if (riskGap >= RISK_NOISE) return true;
+  return Math.abs(riskGap) < RISK_NOISE && meaningfullyCheaper(a, b);
+}
+
+/** What actually separates the recommendation from the next candidate. */
+function separation(winner: RankedCandidate, next: RankedCandidate): ComparisonBasis {
+  if (winner.score.verdict !== next.score.verdict) return "verdict";
+  if (Math.abs(winner.score.ownershipRisk - next.score.ownershipRisk) >= RISK_NOISE) return "risk";
+  if (meaningfullyCheaper(winner, next)) return "cost";
+  return "tie";
+}
+
 /**
  * Ranks candidates and says which to buy.
  *
@@ -167,7 +199,7 @@ export function compareCandidates(candidates: Candidate[], now: Date = new Date(
     return { candidates: ranked, winner: ranked[0] ?? null, basis: "verdict", reasons: [] };
   }
 
-  const [best, runnerUp] = ranked;
+  const [best] = ranked;
 
   // Nobody chooses between a washing machine and a television. Ranking them
   // would produce a confident recommendation about a decision the buyer is not
@@ -189,53 +221,27 @@ export function compareCandidates(candidates: Candidate[], now: Date = new Date(
     };
   }
 
-  /**
-   * Everything still genuinely in contention: the best verdict, and a risk
-   * within noise of the lowest.
-   *
-   * This has to look at the whole field, not just the top two. With three
-   * candidates the sort puts the lowest risk first, so the cheapest of an
-   * otherwise indistinguishable set can sit in third place — and deciding on
-   * cost between the first two would recommend a product that is dearer than
-   * one no riskier than it.
-   */
-  const lowestRisk = Math.min(
-    ...ranked
-      .filter((c) => c.score.verdict === best.score.verdict)
-      .map((c) => c.score.ownershipRisk),
-  );
-  const contenders = ranked.filter(
-    (c) =>
-      c.score.verdict === best.score.verdict &&
-      c.score.ownershipRisk - lowestRisk < RISK_NOISE,
-  );
+  // The recommendation is whichever candidate nothing beats. Anything else
+  // produces advice the reader can refute from the table printed beneath it.
+  const winner = ranked.find((c) => !ranked.some((rival) => beats(rival, c))) ?? best;
 
-  let basis: ComparisonBasis;
-  if (contenders.length < 2) {
-    // One candidate stands clear: either on the verdict or on risk alone.
-    basis = best.score.verdict !== runnerUp.score.verdict ? "verdict" : "risk";
-  } else {
-    const cheapest = [...contenders].sort((a, b) => a.totalCost - b.totalCost)[0];
-    const dearest = [...contenders].sort((a, b) => b.totalCost - a.totalCost)[0];
-    const spread = dearest.totalCost - cheapest.totalCost;
-
-    if (spread > Math.max(1, cheapest.totalCost) * COST_NOISE_RATIO) {
-      basis = "cost";
-      // The sort ordered on risk before cost, and risk has just been ruled a
-      // draw, so the cheapest contender belongs at the front.
-      const at = ranked.indexOf(cheapest);
-      if (at > 0) {
-        ranked.splice(at, 1);
-        ranked.unshift(cheapest);
-        // Everything in contention drew on risk, so they share the top rank.
-        for (const contender of contenders) contender.rank = 1;
+  const at = ranked.indexOf(winner);
+  if (at > 0) {
+    ranked.splice(at, 1);
+    ranked.unshift(winner);
+    // Whatever risk could not separate shares the top rank.
+    for (const c of ranked) {
+      if (
+        c.score.verdict === winner.score.verdict &&
+        Math.abs(c.score.ownershipRisk - winner.score.ownershipRisk) < RISK_NOISE
+      ) {
+        c.rank = 1;
       }
-    } else {
-      basis = "tie";
     }
   }
 
   const [first, second] = ranked;
+  const basis = separation(first, second);
   return {
     candidates: ranked,
     winner: basis === "tie" ? null : first,
