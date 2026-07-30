@@ -64,7 +64,7 @@ v jednotlivých kategóriách — či je vaňa zvarená, či je chladiaci okruh 
 ```bash
 npm install
 npm run dev     # rozhranie na ukážkových dátach
-npm test        # 144 testov: hodnotenie, normalizácia, úložisko, API, jazyk
+npm test        # 180 testov: hodnotenie, normalizácia, úložisko, API, jazyk
 npm run build   # kontrola typov + produkčný build
 ```
 
@@ -77,3 +77,18 @@ funguje celé, ale analýzy sú vopred pripravené a sú tak aj označené.
 2. Nastav `ANTHROPIC_API_KEY` v premenných prostredia.
 3. Over, že projekt má povolené **background functions** a **Netlify Blobs**.
    Bez nich sa výskum nespustí a rozhranie zostane v ukážkovom režime.
+
+### Kontrola nasadenia
+
+Chýbajúci kľúč, nedostupné Blobs ani nenasadená funkcia na pozadí nespôsobia
+chybu — aplikácia sa ticho prepne na ukážkové dáta a navonok vyzerá, že funguje.
+Preto je tu diagnostika:
+
+```
+GET /api/v1/health
+```
+
+Vráti `200` s `ready: true`, keď je živá analýza pripravená, inak `503` a v poli
+`checks` presne to, čo chýba. Overuje sa skutočný zápis a čítanie z Blobs a to,
+či je funkcia na pozadí nasadená — bez jediného volania modelu. Odpoveď hovorí
+len o tom, či kľúč existuje, nikdy neprezradí jeho hodnotu.

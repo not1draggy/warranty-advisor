@@ -217,7 +217,7 @@ describe("deployable shape", () => {
     // Netlify deploys every file here. A test or helper file in this directory
     // is bundled as a function and fails the deploy on its dev-only imports.
     expect(entries.filter((name) => /\.(test|spec)\./.test(name))).toEqual([]);
-    expect(entries.sort()).toEqual(["analyze-background.mts", "analyze.mts"]);
+    expect(entries.sort()).toEqual(["analyze-background.mts", "analyze.mts", "health.mts"]);
   });
 });
 
