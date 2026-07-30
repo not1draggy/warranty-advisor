@@ -434,3 +434,32 @@ describe("stating the span an estimate covers", () => {
     expect(forLife(10)).toContain("10 rokov");
   });
 });
+
+describe("explaining preventable exposure", () => {
+  const withPreventable = (preventable: boolean) =>
+    evidence({
+      failures: [
+        failure({ component: "Ohrev", probability: 50, repairCost: [200, 300], preventable }),
+        failure({ component: "Ložiská", probability: 5, repairCost: [50, 80] }),
+      ],
+    });
+
+  it("says so when much of the exposure is the owner's to avoid", () => {
+    const reasons = scoreAnalysis(withPreventable(true), NOW).reasons.join(" ");
+    expect(reasons).toContain("bežnou údržbou");
+  });
+
+  it("stays quiet when the faults simply arrive", () => {
+    const reasons = scoreAnalysis(withPreventable(false), NOW).reasons.join(" ");
+    expect(reasons).not.toContain("bežnou údržbou");
+  });
+
+  it("never lets a claim of preventability improve the rating", () => {
+    // Otherwise the model could lower any product's risk by asserting its
+    // faults are avoidable, which is exactly the incentive to avoid creating.
+    expect(ownershipRisk(withPreventable(true))).toBe(ownershipRisk(withPreventable(false)));
+    expect(scoreAnalysis(withPreventable(true), NOW).verdict).toBe(
+      scoreAnalysis(withPreventable(false), NOW).verdict,
+    );
+  });
+});

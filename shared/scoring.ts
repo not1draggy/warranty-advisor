@@ -174,6 +174,19 @@ function buildReasons(evidence: AnalysisEvidence, score: Omit<Score, "reasons">)
       `sú približne ${eur(score.expectedRepairCost)}, čo zodpovedá zhruba ${share} % ceny výrobku.`,
   );
 
+  // Explains the number without touching it: a reader who knows most of the
+  // exposure is theirs to avoid reads the same figure differently.
+  const preventableCost = failures
+    .filter((f) => f.preventable)
+    .reduce((sum, f) => sum + (f.probability / 100) * mid(f.repairCost), 0);
+
+  if (score.expectedRepairCost > 0 && preventableCost / score.expectedRepairCost >= 0.4) {
+    reasons.push(
+      `Podstatnú časť týchto nákladov tvoria poruchy, ktorým sa dá bežnou údržbou ` +
+        `do veľkej miery predísť — pri starostlivom používaní bude riziko nižšie.`,
+    );
+  }
+
   const partsReason: Record<Rating, string> = {
     good: "Náhradné diely sú bežne dostupné, čo znižuje riziko aj cenu prípadnej opravy.",
     fair: "Dostupnosť náhradných dielov je obmedzenejšia, oprava môže trvať dlhšie.",

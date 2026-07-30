@@ -57,6 +57,10 @@ export interface Failure {
    * Largely avoidable by ordinary maintenance — descaling, clearing a filter,
    * not overloading. The only kind of risk a buyer can act on, so it is worth
    * separating from the faults that simply arrive.
+   *
+   * Deliberately not an input to the score. A fault you might prevent is still
+   * a fault, and letting this lower the rating would reward a model for
+   * claiming preventability. It explains the number; it never moves it.
    */
   preventable: boolean;
   basis: Basis;
