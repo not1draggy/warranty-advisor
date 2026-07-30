@@ -8,7 +8,7 @@
  */
 
 import type { Basis, Difficulty, Rating, RiskLevel } from "./analysis";
-import type { VerdictKind, WarrantyWorth } from "./scoring";
+import type { CostOfOwnership, Deal, VerdictKind, WarrantyWorth } from "./scoring";
 
 export function eur(value: number): string {
   const decimals = Number.isInteger(value) ? 0 : 2;
@@ -123,6 +123,27 @@ export const WARRANTY_WORTH: Record<WarrantyWorth, { label: string; detail: stri
     label: "Predĺžená záruka sa pravdepodobne neoplatí",
     detail: "Očakávané náklady na opravy sú nižšie než cena záruky.",
   },
+};
+
+export const DEAL: Record<Deal, { label: string; detail: string }> = {
+  below_market: {
+    label: "Cena pod bežnou úrovňou",
+    detail: "Ponuka je nižšia než obvyklá trhová cena tohto výrobku.",
+  },
+  at_market: {
+    label: "Cena na bežnej úrovni",
+    detail: "Ponuka zodpovedá obvyklej trhovej cene tohto výrobku.",
+  },
+  above_market: {
+    label: "Cena nad bežnou úrovňou",
+    detail: "Za tento výrobok sa bežne platí menej, než koľko stojí táto ponuka.",
+  },
+};
+
+/** Where the price behind the calculation came from — always stated, never implied. */
+export const PRICE_SOURCE: Record<CostOfOwnership["priceSource"], string> = {
+  offered: "zadaná cena",
+  market: "odhad bežnej trhovej ceny",
 };
 
 export const SOURCE_AUTHORITY: Record<string, string> = {

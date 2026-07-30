@@ -85,7 +85,8 @@ export function SearchHero({ onSearch, busy, compact }: Props) {
             Prehľadáme servisné cenníky, technické fóra a skúsenosti majiteľov. Dôkladná analýza
             trvá jednu až tri minúty.
             <br />
-            Ak zvažujete predĺženú záruku, pripíšte jej dĺžku a cenu — napríklad{" "}
+            Máte konkrétnu ponuku? Pripíšte cenu — <span className="font-mono">349€</span> — a ak
+            zvažujete aj predĺženú záruku, jej dĺžku a cenu:{" "}
             <span className="font-mono">+3 70,90€</span>
           </p>
         </>

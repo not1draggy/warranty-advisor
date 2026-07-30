@@ -3,6 +3,7 @@ import type { AnalysisEvidence, Failure, Source } from "./analysis";
 import {
   assessWarranty,
   confidence,
+  costOfOwnership,
   expectedRepairCost,
   ownershipRisk,
   scoreAnalysis,
@@ -296,5 +297,72 @@ describe("assessWarranty", () => {
     const short = assessWarranty(evidence(), 1, 50).expectedCost;
     const long = assessWarranty(evidence(), 5, 50).expectedCost;
     expect(long).toBeGreaterThan(short);
+  });
+});
+
+describe("costOfOwnership", () => {
+  // Fixture: 40 %×300 + 20 %×150 + 5 %×70 = 153.50 €, market price 1000 €.
+  it("adds expected repairs to the market price when no offer is given", () => {
+    const cost = costOfOwnership(evidence());
+
+    expect(cost).toMatchObject({
+      price: 1000,
+      priceSource: "market",
+      repairs: 154,
+      total: 1154,
+      deal: null,
+      difference: null,
+    });
+  });
+
+  it("prices the offer the buyer actually has in front of them", () => {
+    const cost = costOfOwnership(evidence(), 700);
+
+    expect(cost).toMatchObject({
+      price: 700,
+      priceSource: "offered",
+      total: 854,
+      deal: "below_market",
+      difference: -300,
+    });
+    // The market price stays available: it is what the offer is judged against.
+    expect(cost.marketPrice).toBe(1000);
+  });
+
+  it("calls an offer near the going rate exactly that", () => {
+    expect(costOfOwnership(evidence(), 950).deal).toBe("at_market");
+    expect(costOfOwnership(evidence(), 1050).deal).toBe("at_market");
+  });
+
+  it("flags an offer above the going rate", () => {
+    expect(costOfOwnership(evidence(), 1400)).toMatchObject({
+      deal: "above_market",
+      difference: 400,
+    });
+  });
+
+  it("leaves the rating alone when the product is discounted", () => {
+    // The same machine bought cheaper is not a riskier machine — only the
+    // arithmetic the buyer is doing changes.
+    const listed = costOfOwnership(evidence());
+    const discounted = costOfOwnership(evidence(), 400);
+
+    expect(discounted.repairs).toBe(listed.repairs);
+    // The whole 600 € saved reaches the buyer; nothing is clawed back.
+    expect(listed.total - discounted.total).toBe(600);
+  });
+
+  it("ignores a price that cannot be a price", () => {
+    expect(costOfOwnership(evidence(), 0).priceSource).toBe("market");
+    expect(costOfOwnership(evidence(), -50).deal).toBeNull();
+  });
+
+  it("never divides the comparison by a missing market price", () => {
+    const free = evidence({
+      product: { ...evidence().product, estimatedPrice: 0 },
+    });
+
+    expect(costOfOwnership(free).price).toBeGreaterThan(0);
+    expect(costOfOwnership(free, 200).deal).toBe("above_market");
   });
 });

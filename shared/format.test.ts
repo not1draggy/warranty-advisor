@@ -4,7 +4,9 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   BASIS,
+  DEAL,
   PARTS_AVAILABILITY,
+  PRICE_SOURCE,
   REPAIR_DIFFICULTY,
   RISK_LEVEL,
   VERDICT,
@@ -104,11 +106,25 @@ describe("user-facing language", () => {
   });
 
   it("labels every rating the model can return", () => {
-    for (const dictionary of [RISK_LEVEL, PARTS_AVAILABILITY, REPAIR_DIFFICULTY, WARRANTY_WORTH]) {
+    for (const dictionary of [
+      RISK_LEVEL,
+      PARTS_AVAILABILITY,
+      REPAIR_DIFFICULTY,
+      WARRANTY_WORTH,
+      DEAL,
+      PRICE_SOURCE,
+    ]) {
       for (const value of Object.values(dictionary)) {
         expect(typeof value === "string" ? value : value.label).toBeTruthy();
       }
     }
+  });
+
+  it("always says which price a calculation rests on", () => {
+    // A total quoted without saying whose price it used is the assumption the
+    // whole rating hangs on, left unstated.
+    expect(PRICE_SOURCE.offered).not.toBe(PRICE_SOURCE.market);
+    expect(PRICE_SOURCE.market).toContain("odhad");
   });
 
   it("distinguishes facts, estimates and expert judgement", () => {

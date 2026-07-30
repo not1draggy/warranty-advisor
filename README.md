@@ -4,9 +4,9 @@ Odpovedá zákazníkovi na jednu otázku: **oplatí sa tento výrobok kúpiť?**
 
 Zadá sa model spotrebiča alebo elektroniky a aplikácia vráti odborné hodnotenie —
 riziko vlastníctva, najčastejšie poruchy, odhad ceny opráv a jednoznačné
-odporúčanie. Ak si používateľ zároveň vyberá predĺženú záruku, pripíše k modelu
-jej dĺžku a cenu (`Bosch WAN28160BY +3 70,90€`) a dostane aj posudok, či sa
-oplatí.
+odporúčanie. K modelu sa dá pripísať cena konkrétnej ponuky aj podmienky
+predĺženej záruky (`Bosch WAN28160BY 349€ +3 70,90€`) — aplikácia potom prepočíta
+celkové náklady na vlastníctvo a posúdi, či sa pripoistenie oplatí.
 
 ## Ako to funguje
 
@@ -36,6 +36,16 @@ takže pripoistenie na tri roky reálne pridáva krytie na 3. až 5. rok — a r
 mu len tá časť porúch, ktorá do tohto okna spadá. Bez toho by záruka dostala
 kredit aj za poruchy, ktoré prídu dávno po jej skončení.
 
+### Cena, z ktorej hodnotenie vychádza
+
+Riziko vlastníctva je pomer očakávaných opráv k cene výrobku, takže cena je
+predpoklad, na ktorom stojí celý verdikt — a preto sa vždy zobrazuje.
+
+Keď kupujúci zadá cenu konkrétnej ponuky, **riziko sa nemení**: tá istá práčka
+kúpená lacnejšie nie je poruchovejšia práčka. Zmení sa počet, ktorý kupujúceho
+naozaj zaujíma — cena plus opravy, ktoré si za ňu kupuje — a k tomu porovnanie
+ponuky s obvyklou trhovou cenou.
+
 ### Ako sa hľadá, keď o modeli nič nie je
 
 Rebrík v prompte ide od presného modelu cez produktovú radu a spoločnú platformu
@@ -64,7 +74,7 @@ v jednotlivých kategóriách — či je vaňa zvarená, či je chladiaci okruh 
 ```bash
 npm install
 npm run dev     # rozhranie na ukážkových dátach
-npm test        # 180 testov: hodnotenie, normalizácia, úložisko, API, jazyk
+npm test        # 193 testov: hodnotenie, normalizácia, úložisko, API, jazyk
 npm run build   # kontrola typov + produkčný build
 ```
 

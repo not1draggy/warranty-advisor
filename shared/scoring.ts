@@ -6,6 +6,7 @@
 import {
   HORIZON_YEARS,
   type AnalysisEvidence,
+  type Basis,
   type Difficulty,
   type Failure,
   type MatchLevel,
@@ -198,6 +199,68 @@ export function scoreAnalysis(evidence: AnalysisEvidence, now: Date = new Date()
     typicalRepairCost: typicalRepairCost(evidence.failures),
   };
   return { ...base, reasons: buildReasons(evidence, base) };
+}
+
+/** How the offered price compares with the typical market price. */
+export type Deal = "below_market" | "at_market" | "above_market";
+
+export interface CostOfOwnership {
+  /** Price this assessment is built on, in EUR. */
+  price: number;
+  /** Whether that price came from the buyer or from the research. */
+  priceSource: "offered" | "market";
+  /** Typical market price the research found, in EUR. */
+  marketPrice: number;
+  /** How the research arrived at that market price. */
+  marketPriceBasis: Basis;
+  /** Expected repair spend across the service life, in EUR. */
+  repairs: number;
+  /** Price plus expected repairs — what owning this is expected to cost. */
+  total: number;
+  /** How the offered price stands against the market; `null` if none was given. */
+  deal: Deal | null;
+  /** Signed difference from the market price in EUR; `null` if none was given. */
+  difference: number | null;
+}
+
+/** Beyond this much either way, an offer is no longer just the going rate. */
+const DEAL_TOLERANCE = 0.1;
+
+/**
+ * What this product is expected to cost to own, end to end.
+ *
+ * Ownership risk deliberately stays measured against the market price: it is a
+ * verdict about the product, and the same machine bought on discount is not a
+ * riskier machine. What a discount changes is the arithmetic the buyer is
+ * actually doing — price plus the repairs that price buys them — so that is
+ * what this reports, alongside how the offer compares with the going rate.
+ */
+export function costOfOwnership(
+  evidence: AnalysisEvidence,
+  offeredPrice: number | null = null,
+): CostOfOwnership {
+  const marketPrice = Math.max(MIN_PRICE_EUR, evidence.product.estimatedPrice);
+  const offered = offeredPrice !== null && offeredPrice > 0 ? offeredPrice : null;
+  const price = offered ?? marketPrice;
+  const repairs = Math.round(expectedRepairCost(evidence.failures));
+
+  let deal: Deal | null = null;
+  if (offered !== null) {
+    if (offered <= marketPrice * (1 - DEAL_TOLERANCE)) deal = "below_market";
+    else if (offered >= marketPrice * (1 + DEAL_TOLERANCE)) deal = "above_market";
+    else deal = "at_market";
+  }
+
+  return {
+    price,
+    priceSource: offered !== null ? "offered" : "market",
+    marketPrice,
+    marketPriceBasis: evidence.product.priceBasis,
+    repairs,
+    total: Math.round(price + repairs),
+    deal,
+    difference: offered !== null ? Math.round(offered - marketPrice) : null,
+  };
 }
 
 /**

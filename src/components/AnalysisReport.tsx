@@ -1,7 +1,9 @@
 import { useRef } from "react";
 import type { AnalysisEvidence } from "../../shared/analysis";
 import {
+  DEAL,
   PARTS_AVAILABILITY,
+  PRICE_SOURCE,
   REPAIR_DIFFICULTY,
   SOURCE_AUTHORITY,
   WARRANTY_WORTH,
@@ -10,7 +12,7 @@ import {
   formatSourceDate,
   years as formatYears,
 } from "../../shared/format";
-import { assessWarranty, scoreAnalysis } from "../../shared/scoring";
+import { assessWarranty, costOfOwnership, scoreAnalysis } from "../../shared/scoring";
 import type { ParsedQuery } from "../lib/query";
 import { FailureCard } from "./FailureCard";
 import { StickyVerdict } from "./StickyVerdict";
@@ -22,6 +24,60 @@ const STANDING = {
   similar: { label: "Porovnateľné", tone: "neutral" },
   worse: { label: "Slabšia voľba", tone: "bad" },
 } as const;
+
+/**
+ * What owning this is expected to cost, and which price that rests on.
+ *
+ * The market price is the denominator of the whole rating, so leaving it
+ * unstated hides the assumption the verdict is built on. When the buyer has an
+ * actual offer in front of them, this answers the question in their terms.
+ */
+function CostPanel({ evidence, query }: { evidence: AnalysisEvidence; query: ParsedQuery }) {
+  const cost = costOfOwnership(evidence, query.price);
+  const deal = cost.deal ? DEAL[cost.deal] : null;
+  const tone =
+    cost.deal === "below_market" ? "good" : cost.deal === "above_market" ? "bad" : "neutral";
+
+  return (
+    <Card>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="font-medium">Celkové náklady na vlastníctvo</h3>
+        {deal && <Chip tone={tone}>{deal.label}</Chip>}
+      </div>
+
+      <dl className="mt-3 space-y-1.5 text-[0.9375rem]">
+        <div className="flex items-baseline justify-between gap-4">
+          <dt className="text-muted">Cena výrobku ({PRICE_SOURCE[cost.priceSource]})</dt>
+          <dd className="font-medium tabular-nums">{eur(cost.price)}</dd>
+        </div>
+        <div className="flex items-baseline justify-between gap-4">
+          <dt className="text-muted">Očakávané opravy počas životnosti</dt>
+          <dd className="font-medium tabular-nums">{eur(cost.repairs)}</dd>
+        </div>
+        <div className="flex items-baseline justify-between gap-4 border-t border-line pt-1.5">
+          <dt className="font-medium">Spolu</dt>
+          <dd className="text-lg font-semibold tabular-nums">{eur(cost.total)}</dd>
+        </div>
+      </dl>
+
+      <p className="mt-3 text-sm leading-relaxed text-muted">
+        {deal ? (
+          <>
+            {deal.detail} Bežne sa tento výrobok predáva okolo{" "}
+            <span className="font-medium text-ink">{eur(cost.marketPrice)}</span>
+            {cost.marketPriceBasis === "fact" ? "" : " (odhad)"}.
+          </>
+        ) : (
+          <>
+            Hodnotenie rizika vychádza z tejto ceny. Ak máte konkrétnu ponuku, pripíšte ju k modelu
+            — napríklad <span className="text-ink">{evidence.product.model} 349€</span> — a náklady
+            sa prepočítajú na ňu.
+          </>
+        )}
+      </p>
+    </Card>
+  );
+}
 
 /** Extended-warranty verdict; only rendered when the query supplied terms. */
 function WarrantyPanel({
@@ -236,6 +292,7 @@ export function AnalysisReport({
           <Card>
             <Prose>{evidence.summary}</Prose>
           </Card>
+          <CostPanel evidence={evidence} query={query} />
           <WarrantyPanel evidence={evidence} query={query} />
         </div>
       </Section>

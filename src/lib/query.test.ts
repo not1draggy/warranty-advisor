@@ -5,6 +5,7 @@ describe("parseQuery", () => {
   it("treats a bare model as the product", () => {
     expect(parseQuery("Bosch WAN28160BY")).toEqual({
       product: "Bosch WAN28160BY",
+      price: null,
       warrantyYears: null,
       warrantyPrice: null,
     });
@@ -13,9 +14,50 @@ describe("parseQuery", () => {
   it("reads warranty length and price out of the query", () => {
     expect(parseQuery("Bosch WAN28160BY +3 70,90€")).toEqual({
       product: "Bosch WAN28160BY",
+      price: null,
       warrantyYears: 3,
       warrantyPrice: 70.9,
     });
+  });
+
+  it("reads the price the buyer is being offered", () => {
+    expect(parseQuery("Bosch WAN28160BY 349€")).toMatchObject({
+      product: "Bosch WAN28160BY",
+      price: 349,
+    });
+  });
+
+  it("keeps the offered price and the warranty price apart", () => {
+    expect(parseQuery("Bosch WAN28160BY 349€ +3 70,90€")).toEqual({
+      product: "Bosch WAN28160BY",
+      price: 349,
+      warrantyYears: 3,
+      warrantyPrice: 70.9,
+    });
+  });
+
+  it("accepts the spellings people actually type", () => {
+    expect(parseQuery("iPhone 13 za 499 EUR").price).toBe(499);
+    expect(parseQuery("Samsung QE55 1 299,90 €").price).toBe(1299.9);
+    expect(parseQuery("Samsung QE55 1.299€").price).toBe(1299);
+  });
+
+  it("never mistakes a model number for a price", () => {
+    // Without a currency marker there is no way to tell one from the other,
+    // and reading a model number as a price would silently rescore the report.
+    expect(parseQuery("Samsung UE75NU8000")).toMatchObject({
+      product: "Samsung UE75NU8000",
+      price: null,
+    });
+    expect(parseQuery("iPhone 13 128").price).toBeNull();
+  });
+
+  it("ignores a price no shop would ask", () => {
+    expect(parseQuery("Bosch WAN28160BY 0€")).toMatchObject({
+      product: "Bosch WAN28160BY 0€",
+      price: null,
+    });
+    expect(parseQuery("Bosch WAN28160BY 999999€").price).toBeNull();
   });
 
   it("accepts a warranty length with no price", () => {
