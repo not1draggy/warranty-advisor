@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnalysisReport } from "./components/AnalysisReport";
+import { HowItWorks } from "./components/HowItWorks";
 import { LoadingSteps } from "./components/LoadingSteps";
 import { SearchHero } from "./components/SearchHero";
 import { RecentAnalyses } from "./components/RecentAnalyses";
@@ -98,15 +99,6 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      {/*
-        Balances the empty space so an empty landing page sits centred rather
-        than stranded at the top. With a shortlist below, the page has content
-        of its own and the hero belongs at the top.
-      */}
-      {view.kind === "idle" && history.length === 0 && (
-        <div className="flex-1" aria-hidden="true" />
-      )}
-
       <SearchHero
         onSearch={(query) => void runSearch(query)}
         busy={view.kind === "loading"}
@@ -115,16 +107,19 @@ export default function App() {
 
       <main className="flex-1">
         {view.kind === "idle" && (
-          <div className="px-4">
-            <RecentAnalyses
-              entries={history}
-              onPick={(query) => void runSearch(query)}
-              onClear={() => {
-                clearHistory();
-                setHistory([]);
-              }}
-            />
-          </div>
+          <>
+            <div className="px-4">
+              <RecentAnalyses
+                entries={history}
+                onPick={(query) => void runSearch(query)}
+                onClear={() => {
+                  clearHistory();
+                  setHistory([]);
+                }}
+              />
+            </div>
+            <HowItWorks />
+          </>
         )}
 
         {view.kind === "loading" && <LoadingSteps />}
