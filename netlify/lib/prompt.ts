@@ -36,6 +36,19 @@ Search for the current callout fee and hourly labour rate of Slovak service
 centres, and build every repair estimate from a real part price plus realistic
 labour hours. Never state a total you cannot decompose that way.
 
+WHAT THE PRODUCT COSTS
+"estimatedPrice" is not a detail. Every repair cost is judged against it, so it
+decides the rating as much as the failures do — and the buyer is shown it.
+Research it as carefully as the repair prices:
+- Look up what Slovak and Czech retailers charge for it new, today.
+- If it is discontinued, price the closest current equivalent instead. That is
+  what replacing the unit would actually cost, which is the number a repair
+  decision turns on. Say so in "evidenceNote".
+- Never use a launch RRP for an older model, and never use a clearance or
+  single-shop price as the typical one.
+- Set "priceBasis" to "fact" only when a retailer listing states it, otherwise
+  "estimate" when derived from comparable models, or "assumption".
+
 Set "matchLevel" honestly:
 - "exact"    — you found service data about this precise model.
 - "family"   — you mostly found data about the same product line or an almost
@@ -174,7 +187,8 @@ export const ANALYSIS_SCHEMA = {
         matchLevel: { type: "string", enum: ["exact", "family", "category"] },
         estimatedPrice: {
           type: "number",
-          description: "Typická aktuálna trhová cena výrobku v EUR.",
+          description:
+            "Typická aktuálna cena nového kusu v EUR na slovenskom alebo českom trhu. Pri už nepredávanom modeli cena najbližšieho súčasného ekvivalentu — teda to, čo by dnes stálo nahradenie.",
         },
         priceBasis: { type: "string", enum: ["fact", "estimate", "assumption"] },
       },

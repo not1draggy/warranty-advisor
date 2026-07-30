@@ -131,6 +131,15 @@ describe("system prompt", () => {
     expect(SYSTEM_PROMPT).toContain("would contradict its own timing");
   });
 
+  it("researches the product price as carefully as the repair prices", () => {
+    // Every repair cost is judged against it and the buyer is shown it, so a
+    // guessed price moves the rating as much as a guessed failure would.
+    expect(SYSTEM_PROMPT).toContain("WHAT THE PRODUCT COSTS");
+    expect(SYSTEM_PROMPT).toContain("Never use a launch RRP");
+    // A discontinued model must be priced at what replacing it costs today.
+    expect(SYSTEM_PROMPT).toContain("closest current equivalent");
+  });
+
   it("refuses invented citations and prices", () => {
     expect(SYSTEM_PROMPT).toContain("Never invent a URL");
     expect(SYSTEM_PROMPT).toContain("Never invent a price");
