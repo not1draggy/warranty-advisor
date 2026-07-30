@@ -27,6 +27,7 @@ const DEMO_ANALYSES: DemoAnalysis[] = [
         matchLevel: "family",
         estimatedPrice: 950,
         priceBasis: "estimate",
+        serviceLifeYears: 9,
       },
       evidenceNote:
         "Ide o ukážkovú analýzu. Ilustruje, ako vyzerá hodnotenie modelu, ku ktorému existujú servisné údaje najmä z rovnakej produktovej rady.",
@@ -135,6 +136,7 @@ const DEMO_ANALYSES: DemoAnalysis[] = [
         matchLevel: "exact",
         estimatedPrice: 520,
         priceBasis: "estimate",
+        serviceLifeYears: 5,
       },
       evidenceNote:
         "Ide o ukážkovú analýzu. Ilustruje, ako vyzerá hodnotenie modelu s bohatými verejnými servisnými údajmi.",
@@ -239,6 +241,7 @@ const DEMO_ANALYSES: DemoAnalysis[] = [
         matchLevel: "family",
         estimatedPrice: 430,
         priceBasis: "estimate",
+        serviceLifeYears: 12,
       },
       evidenceNote:
         "Ide o ukážkovú analýzu. Ilustruje, ako vyzerá hodnotenie spotrebiča, pri ktorom sa vychádza z konštrukcie a skúseností servisov.",

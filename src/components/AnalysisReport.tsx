@@ -51,7 +51,9 @@ function CostPanel({ evidence, query }: { evidence: AnalysisEvidence; query: Par
           <dd className="font-medium tabular-nums">{eur(cost.price)}</dd>
         </div>
         <div className="flex items-baseline justify-between gap-4">
-          <dt className="text-muted">Očakávané opravy počas životnosti</dt>
+          <dt className="text-muted">
+            Očakávané opravy počas {formatYears(evidence.product.serviceLifeYears)}
+          </dt>
           <dd className="font-medium tabular-nums">{eur(cost.repairs)}</dd>
         </div>
         <div className="flex items-baseline justify-between gap-4 border-t border-line pt-1.5">
@@ -185,7 +187,11 @@ export function AnalysisReport({
             <p className="text-xs tracking-wide text-subtle uppercase">Bežná oprava</p>
             <p className="mt-1 text-2xl font-semibold">{eurRange(score.typicalRepairCost)}</p>
             <p className="mt-2 text-sm leading-relaxed text-muted">
-              Počas životnosti možno očakávať náklady na opravy zhruba{" "}
+              Za predpokladanú životnosť{" "}
+              <span className="font-medium text-ink">
+                {formatYears(evidence.product.serviceLifeYears)}
+              </span>{" "}
+              možno očakávať náklady na opravy zhruba{" "}
               <span className="font-medium text-ink">{eur(score.expectedRepairCost)}</span>.
             </p>
           </Card>

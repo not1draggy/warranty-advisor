@@ -36,6 +36,18 @@ takže pripoistenie na tri roky reálne pridáva krytie na 3. až 5. rok — a r
 mu len tá časť porúch, ktorá do tohto okna spadá. Bez toho by záruka dostala
 kredit aj za poruchy, ktoré prídu dávno po jej skončení.
 
+### Ako dlho výrobok vydrží
+
+Každá pravdepodobnosť je meraná cez predpokladanú životnosť výrobku, takže bez
+nej je odhad opráv nečitateľný: 90 € za štyri roky telefónu a 90 € za dvanásť
+rokov práčky sú dve úplne iné tvrdenia. Životnosť sa preto zisťuje, zobrazuje a
+uvádza pri každom celoživotnom čísle.
+
+Nesie ju aj posudok záruky. Porucha bez charakteristického načasovania sa
+rozloží rovnomerne cez životnosť — a rozložiť poruchy práčky cez päť rokov
+namiesto dvanástich by pripísalo pripoisteniu dvojnásobok krytia, než reálne
+poskytuje.
+
 ### Cena, z ktorej hodnotenie vychádza
 
 Riziko vlastníctva je pomer očakávaných opráv k cene výrobku, takže cena je
@@ -74,7 +86,7 @@ v jednotlivých kategóriách — či je vaňa zvarená, či je chladiaci okruh 
 ```bash
 npm install
 npm run dev     # rozhranie na ukážkových dátach
-npm test        # 237 testov: hodnotenie, normalizácia, úložisko, API, jazyk
+npm test        # 246 testov: hodnotenie, normalizácia, úložisko, API, jazyk
 npm run build   # kontrola typov + produkčný build
 ```
 

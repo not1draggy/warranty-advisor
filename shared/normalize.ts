@@ -7,6 +7,11 @@
  * instead of silently keeping a citation it can no longer support.
  */
 
+import {
+  DEFAULT_SERVICE_LIFE_YEARS,
+  MAX_SERVICE_LIFE_YEARS,
+  MIN_SERVICE_LIFE_YEARS,
+} from "./analysis";
 import type {
   AnalysisEvidence,
   Basis,
@@ -213,7 +218,17 @@ function normalizeProduct(value: unknown, fallbackName: string): ProductIdentity
     matchLevel: oneOf(raw.matchLevel, MATCH_LEVELS, "category"),
     estimatedPrice: price !== null && price > 0 ? Math.round(clamp(price, 1, 1_000_000)) : 0,
     priceBasis: oneOf(raw.priceBasis, BASES, "estimate"),
+    // Provisional: resolved against the failures once those are known, because
+    // a life shorter than the faults it is supposed to contain is not a life.
+    serviceLifeYears: serviceLife(raw.serviceLifeYears),
   };
+}
+
+/** A stated service life, or 0 when the model gave nothing usable. */
+function serviceLife(value: unknown): number {
+  const years = num(value);
+  if (years === null || years <= 0) return 0;
+  return Math.round(clamp(years, MIN_SERVICE_LIFE_YEARS, MAX_SERVICE_LIFE_YEARS));
 }
 
 /**
@@ -237,6 +252,22 @@ export function normalizeEvidence(input: unknown, fallbackName: string): Analysi
   // Fall back to the priciest known failure so the worst case is always real.
   const worstCost = costRange(rawWorst.cost) ?? worstFailure.repairCost;
   const worstComponent = text(rawWorst.component, MAX_SHORT_TEXT) || worstFailure.component;
+
+  // A service life that ends before the faults it is meant to span would make
+  // the warranty maths nonsense — every late failure would fall outside every
+  // window. Take the product at its word only when the word is consistent.
+  const latestOnset = Math.max(0, ...failures.map((f) => f.onsetYears?.[1] ?? 0));
+  if (product.serviceLifeYears === 0) {
+    product.serviceLifeYears = Math.round(
+      clamp(
+        Math.max(latestOnset, DEFAULT_SERVICE_LIFE_YEARS),
+        MIN_SERVICE_LIFE_YEARS,
+        MAX_SERVICE_LIFE_YEARS,
+      ),
+    );
+  } else if (latestOnset > product.serviceLifeYears) {
+    product.serviceLifeYears = Math.round(clamp(latestOnset, MIN_SERVICE_LIFE_YEARS, MAX_SERVICE_LIFE_YEARS));
+  }
 
   if (product.estimatedPrice === 0) {
     // Without a price the risk denominator is meaningless; anchor it to the

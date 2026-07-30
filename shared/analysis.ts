@@ -74,6 +74,14 @@ export interface ProductIdentity {
   /** Typical current market price in EUR — the denominator for ownership risk. */
   estimatedPrice: number;
   priceBasis: Basis;
+  /**
+   * Years this class of product is normally expected to last.
+   *
+   * Every probability is quoted over this span, so it is what makes an
+   * expected repair figure mean anything: 90 € across four years of a phone
+   * and across twelve years of a washing machine are different claims.
+   */
+  serviceLifeYears: number;
 }
 
 export interface AnalysisEvidence {
@@ -95,5 +103,15 @@ export interface AnalysisEvidence {
   sources: Source[];
 }
 
-/** Ownership window every probability and cost estimate is measured over. */
-export const HORIZON_YEARS = 5;
+/**
+ * Service life assumed when the research does not establish one.
+ *
+ * Deliberately mid-range for a major appliance: short enough not to inflate
+ * what a warranty appears to cover, long enough not to compress a product's
+ * whole failure history into a few years.
+ */
+export const DEFAULT_SERVICE_LIFE_YEARS = 10;
+
+/** Bounds outside which a stated service life is not credible. */
+export const MIN_SERVICE_LIFE_YEARS = 2;
+export const MAX_SERVICE_LIFE_YEARS = 25;

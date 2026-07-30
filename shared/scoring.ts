@@ -4,7 +4,6 @@
  */
 
 import {
-  HORIZON_YEARS,
   type AnalysisEvidence,
   type Basis,
   type Difficulty,
@@ -140,6 +139,16 @@ export function verdictFor(ownershipRisk: number, confidence: number): VerdictKi
 
 const eur = (n: number) => `${Math.round(n).toLocaleString("sk-SK")} €`;
 
+/**
+ * Slovak year plural. Duplicated from `format.ts` rather than imported,
+ * because scoring must not depend on the presentation layer.
+ */
+function slovakYears(count: number): string {
+  if (count === 1) return "1 rok";
+  if (count >= 2 && count <= 4) return `${count} roky`;
+  return `${count} rokov`;
+}
+
 function buildReasons(evidence: AnalysisEvidence, score: Omit<Score, "reasons">): string[] {
   const reasons: string[] = [];
   const { failures, product } = evidence;
@@ -151,15 +160,18 @@ function buildReasons(evidence: AnalysisEvidence, score: Omit<Score, "reasons">)
   if (dominant) {
     reasons.push(
       `Na hodnotenie má najväčší vplyv ${dominant.component.toLowerCase()} — ` +
-        `porucha s odhadovanou pravdepodobnosťou ${dominant.probability} % počas životnosti ` +
+        `porucha s odhadovanou pravdepodobnosťou ${dominant.probability} % počas ` +
+        `${slovakYears(product.serviceLifeYears)} životnosti ` +
         `a cenou opravy ${eur(dominant.repairCost[0])} až ${eur(dominant.repairCost[1])}.`,
     );
   }
 
-  const share = Math.round((score.expectedRepairCost / Math.max(MIN_PRICE_EUR, product.estimatedPrice)) * 100);
+  const share = Math.round(
+    (score.expectedRepairCost / Math.max(MIN_PRICE_EUR, product.estimatedPrice)) * 100,
+  );
   reasons.push(
-    `Očakávané náklady na opravy počas životnosti sú približne ${eur(score.expectedRepairCost)}, ` +
-      `čo zodpovedá zhruba ${share} % ceny výrobku.`,
+    `Očakávané náklady na opravy za predpokladanú životnosť ${slovakYears(product.serviceLifeYears)} ` +
+      `sú približne ${eur(score.expectedRepairCost)}, čo zodpovedá zhruba ${share} % ceny výrobku.`,
   );
 
   const partsReason: Record<Rating, string> = {
@@ -277,12 +289,20 @@ export const STATUTORY_WARRANTY_YEARS = 2;
  * drain pump at three to six. Cover that expires before the onset window is
  * worth nothing against that failure — the mistake this product exists to
  * stop buyers making. Failures with no characteristic timing are spread
- * evenly across the ownership horizon instead.
+ * evenly across the product's service life instead, which is why that life has
+ * to be the product's own and not a fixed horizon: spreading a washing
+ * machine's faults over five years would credit a warranty with twice the
+ * cover it actually provides.
  */
-function shareInWindow(failure: Failure, from: number, to: number): number {
+function shareInWindow(
+  failure: Failure,
+  from: number,
+  to: number,
+  serviceLifeYears: number,
+): number {
   if (to <= from) return 0;
 
-  const [start, end] = failure.onsetYears ?? [0, HORIZON_YEARS];
+  const [start, end] = failure.onsetYears ?? [0, serviceLifeYears];
   const overlap = Math.min(to, end) - Math.max(from, start);
   if (overlap <= 0) return 0;
 
@@ -325,7 +345,10 @@ export function assessWarranty(
 
   const expected = evidence.failures.reduce(
     (sum, f) =>
-      sum + (f.probability / 100) * mid(f.repairCost) * shareInWindow(f, coversFrom, coversTo),
+      sum +
+      (f.probability / 100) *
+        mid(f.repairCost) *
+        shareInWindow(f, coversFrom, coversTo, evidence.product.serviceLifeYears),
     0,
   );
 

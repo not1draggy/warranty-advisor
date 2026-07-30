@@ -88,6 +88,14 @@ entry that fits and ignore the rest.
 - Vacuum / robot vacuum: battery pack availability, brush and belt wear,
   motor bearings, sensors and docking electronics.
 
+HOW LONG IT LASTS
+"serviceLifeYears" is how long this class of product normally lasts in ordinary
+use — a washing machine ten to twelve years, a phone four to five, a television
+eight to ten. Every probability you give is measured over that span, so it is
+what makes an expected repair figure mean anything: 90 EUR across four years and
+across twelve years are different claims about the same product. Judge it from
+the category, the build and the maker's parts support, not from the warranty.
+
 ECONOMIC WRITE-OFF
 Say plainly in "worstCase.note" at what point repair stops making sense —
 when the quote approaches the price of a replacement, when the part is no
@@ -177,6 +185,7 @@ export const ANALYSIS_SCHEMA = {
         "matchLevel",
         "estimatedPrice",
         "priceBasis",
+        "serviceLifeYears",
       ],
       properties: {
         brand: { type: "string" },
@@ -191,6 +200,11 @@ export const ANALYSIS_SCHEMA = {
             "Typická aktuálna cena nového kusu v EUR na slovenskom alebo českom trhu. Pri už nepredávanom modeli cena najbližšieho súčasného ekvivalentu — teda to, čo by dnes stálo nahradenie.",
         },
         priceBasis: { type: "string", enum: ["fact", "estimate", "assumption"] },
+        serviceLifeYears: {
+          type: "number",
+          description:
+            "Koľko rokov tento typ výrobku pri bežnom používaní zvyčajne vydrží (napríklad práčka 10 – 12, telefón 4 – 5, televízor 8 – 10).",
+        },
       },
     },
     evidenceNote: {

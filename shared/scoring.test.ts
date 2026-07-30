@@ -51,6 +51,7 @@ function evidence(overrides: Partial<AnalysisEvidence> = {}): AnalysisEvidence {
       matchLevel: "exact",
       estimatedPrice: 1000,
       priceBasis: "estimate",
+      serviceLifeYears: 10,
     },
     evidenceNote: "",
     failures: [
@@ -269,20 +270,20 @@ describe("assessWarranty coverage window", () => {
     );
   });
 
-  it("spreads a failure with no characteristic timing across the horizon", () => {
+  it("spreads a failure with no characteristic timing across the service life", () => {
     const accidental = single({ onsetYears: null });
-    // Cover spans years 2-5, so three fifths of a five-year uniform risk.
-    expect(assessWarranty(accidental, 3, 40).expectedCost).toBe(45);
+    // Cover spans years 2-5 of a ten-year life, so three tenths of the risk.
+    expect(assessWarranty(accidental, 3, 40).expectedCost).toBe(23);
   });
 });
 
 describe("assessWarranty", () => {
   it("recommends cover when expected repairs clearly exceed the price", () => {
-    expect(assessWarranty(evidence(), 3, 40)).toMatchObject({ worth: "yes", expectedCost: 92 });
+    expect(assessWarranty(evidence(), 3, 30)).toMatchObject({ worth: "yes", expectedCost: 46 });
   });
 
   it("calls it borderline when the two are close", () => {
-    expect(assessWarranty(evidence(), 2, 50).worth).toBe("borderline");
+    expect(assessWarranty(evidence(), 2, 35).worth).toBe("borderline");
   });
 
   it("advises against cover that costs more than the expected repairs", () => {
@@ -364,5 +365,71 @@ describe("costOfOwnership", () => {
 
     expect(costOfOwnership(free).price).toBeGreaterThan(0);
     expect(costOfOwnership(free, 200).deal).toBe("above_market");
+  });
+});
+
+describe("service life in the warranty maths", () => {
+  /** One fault with no characteristic onset, so it spreads across the life. */
+  const untimed = (serviceLifeYears: number) =>
+    evidence({
+      product: { ...evidence().product, serviceLifeYears },
+      failures: [failure({ probability: 60, repairCost: [200, 200], onsetYears: null })],
+    });
+
+  it("spreads an untimed failure across the product's own life, not a fixed span", () => {
+    // A three-year extension covers years 2-5. Over a five-year life that is
+    // 60% of the fault; over a fifteen-year life it is 20% of the same fault.
+    const short = assessWarranty(untimed(5), 3, 100).expectedCost;
+    const long = assessWarranty(untimed(15), 3, 100).expectedCost;
+
+    expect(short).toBeGreaterThan(long);
+    expect(short / long).toBeCloseTo(3, 1);
+  });
+
+  it("does not credit a warranty for cover it cannot provide", () => {
+    // Assuming five years for a washing machine that lasts twelve would have
+    // told the buyer this pays for itself. It does not.
+    const assumedShort = assessWarranty(untimed(5), 3, 50);
+    const actual = assessWarranty(untimed(12), 3, 50);
+
+    expect(assumedShort.worth).toBe("yes");
+    expect(actual.worth).toBe("no");
+  });
+
+  it("still weighs a dated failure by its own onset window", () => {
+    // A life figure must not override timing the research actually established.
+    const dated = evidence({
+      product: { ...evidence().product, serviceLifeYears: 20 },
+      failures: [failure({ probability: 60, repairCost: [200, 200], onsetYears: [3, 4] })],
+    });
+
+    // Years 2-5 contain the whole 3-4 window, so the cover catches all of it.
+    expect(assessWarranty(dated, 3, 100).expectedCost).toBe(120);
+  });
+});
+
+describe("stating the span an estimate covers", () => {
+  it("names the service life wherever it quotes a lifetime figure", () => {
+    // An expected repair bill means nothing without the years it spans.
+    const reasons = scoreAnalysis(
+      evidence({ product: { ...evidence().product, serviceLifeYears: 12 } }),
+      NOW,
+    ).reasons.join(" ");
+
+    expect(reasons).toContain("12 rokov");
+    // Never the bare word, which says nothing a reader can use.
+    expect(reasons).not.toMatch(/počas životnosti/);
+  });
+
+  it("gets the Slovak plural right across the plausible range", () => {
+    const forLife = (years: number) =>
+      scoreAnalysis(
+        evidence({ product: { ...evidence().product, serviceLifeYears: years } }),
+        NOW,
+      ).reasons.join(" ");
+
+    expect(forLife(1)).toContain("1 rok ");
+    expect(forLife(3)).toContain("3 roky");
+    expect(forLife(10)).toContain("10 rokov");
   });
 });
