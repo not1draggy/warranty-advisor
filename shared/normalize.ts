@@ -126,6 +126,51 @@ const RISK_LEVELS: readonly RiskLevel[] = ["high", "medium", "low"];
 const MATCH_LEVELS: readonly MatchLevel[] = ["exact", "family", "category"];
 const STANDINGS = ["better", "similar", "worse"] as const;
 
+/**
+ * Hosts whose content is a community posting whatever it is labelled.
+ *
+ * Authority feeds confidence, and confidence can turn a reserved
+ * recommendation into an unreserved one — so a claim that a Reddit thread is
+ * an authorised service price list is a lever on the verdict. The host is the
+ * one part of a citation that cannot be talked up, so it caps the claim.
+ */
+const COMMUNITY_HOSTS = [
+  "reddit.com",
+  "youtube.com",
+  "youtu.be",
+  "facebook.com",
+  "instagram.com",
+  "tiktok.com",
+  "twitter.com",
+  "x.com",
+  "quora.com",
+  "pinterest.com",
+  "medium.com",
+];
+
+/** Caps a claimed authority at what the host could plausibly support. */
+function cappedAuthority(claimed: SourceAuthority, url: string): SourceAuthority {
+  let host: string;
+  try {
+    host = new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return claimed;
+  }
+
+  const isCommunity = COMMUNITY_HOSTS.some(
+    (known) => host === known || host.endsWith(`.${known}`),
+  );
+  if (isCommunity) return "community";
+
+  // A discussion board is worth citing, but it is not a manufacturer document.
+  const looksLikeForum = /(^|[.\-/])forum|diskus|board\b/.test(host);
+  if (looksLikeForum && (claimed === "authorized_service" || claimed === "service_manual")) {
+    return "forum";
+  }
+
+  return claimed;
+}
+
 function normalizeSources(value: unknown): Source[] {
   if (!Array.isArray(value)) return [];
   const seen = new Set<string>();
@@ -142,7 +187,7 @@ function normalizeSources(value: unknown): Source[] {
       id: text(raw.id, 40) || `s${sources.length + 1}`,
       name,
       url,
-      authority: oneOf(raw.authority, AUTHORITIES, "community"),
+      authority: cappedAuthority(oneOf(raw.authority, AUTHORITIES, "community"), url),
       date: isoDate(raw.date),
     });
     if (sources.length >= MAX_SOURCES) break;
