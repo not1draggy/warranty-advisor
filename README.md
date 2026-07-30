@@ -36,21 +36,35 @@ takže pripoistenie na tri roky reálne pridáva krytie na 3. až 5. rok — a r
 mu len tá časť porúch, ktorá do tohto okna spadá. Bez toho by záruka dostala
 kredit aj za poruchy, ktoré prídu dávno po jej skončení.
 
+### Ako sa hľadá, keď o modeli nič nie je
+
+Rebrík v prompte ide od presného modelu cez produktovú radu a spoločnú platformu
+až po **konkrétne opotrebiteľné diely**. Spotrebiče zdieľajú kompresory, čerpadlá
+a motory naprieč značkami, takže kompresor Secop alebo čerpadlo Askoll si nesie
+svoju históriu bez ohľadu na logo na dvierkach. Prompt zároveň vie, na čo sa pýtať
+v jednotlivých kategóriách — či je vaňa zvarená, či je chladiaci okruh hermetický,
+či ide o podsvietenie alebo o samotný panel.
+
 ## Štruktúra
 
-| Priečinok            | Obsah                                                        |
-| -------------------- | ------------------------------------------------------------ |
-| `shared/`            | Typy, výpočet hodnotenia, normalizácia odpovede, formátovanie |
-| `netlify/functions/` | API a výskumný pracovník na pozadí                            |
-| `netlify/lib/`       | Prompt, schéma odpovede, úložisko a limity                    |
-| `src/`               | Rozhranie (Vite + React + Tailwind)                           |
+| Priečinok            | Obsah                                                          |
+| -------------------- | -------------------------------------------------------------- |
+| `shared/`            | Typy, výpočet hodnotenia, normalizácia odpovede, formátovanie  |
+| `netlify/functions/` | API a výskumný pracovník na pozadí — **iba skutočné funkcie**  |
+| `netlify/lib/`       | Prompt, schéma odpovede, úložisko a limity                     |
+| `netlify/tests/`     | Testy funkcií, mimo nasadzovaného priečinka                    |
+| `src/`               | Rozhranie (Vite + React + Tailwind)                            |
+
+> Netlify nasadzuje **každý** súbor v `netlify/functions/` ako funkciu. Testy
+> preto patria do `netlify/tests/` — inak sa zabalia do nasadenia a to zlyhá.
+> Stráži to samostatný test.
 
 ## Spustenie
 
 ```bash
 npm install
 npm run dev     # rozhranie na ukážkových dátach
-npm test        # 62 testov obchodnej logiky
+npm test        # 144 testov: hodnotenie, normalizácia, úložisko, API, jazyk
 npm run build   # kontrola typov + produkčný build
 ```
 
