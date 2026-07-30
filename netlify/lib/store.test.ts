@@ -111,6 +111,19 @@ describe("readJob", () => {
   });
 });
 
+describe("job lifetime against the client's patience", () => {
+    it("outlives the interface, so a retry never duplicates a running job", async () => {
+      // These two were once equal, so the moment the client gave up the job
+      // was declared dead too — and retrying paid for the same research twice.
+      const { POLL_TIMEOUT_MS } = await import("../../src/lib/api");
+      expect(JOB_TIMEOUT_MS).toBeGreaterThan(POLL_TIMEOUT_MS);
+    });
+
+    it("expires a failure well before the job it belongs to", () => {
+      expect(FAILURE_TTL_MS).toBeLessThan(JOB_TIMEOUT_MS);
+    });
+});
+
 describe("allowRequest", () => {
   it("allows requests up to the limit and then refuses", async () => {
     for (let i = 0; i < LIMIT.max; i += 1) {

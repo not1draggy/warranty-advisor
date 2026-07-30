@@ -28,8 +28,16 @@ const RATE_LIMIT_STORE = "rate-limits";
 
 /** How long a finished analysis is reused before it is researched again. */
 export const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-/** A job still pending after this is assumed dead and may be restarted. */
-export const JOB_TIMEOUT_MS = 4 * 60 * 1000;
+/**
+ * A job still pending after this is assumed dead and may be restarted.
+ *
+ * Must stay comfortably above both the longest realistic research run and the
+ * client's own patience. If it expires while a worker is still going, a retry
+ * looks like a fresh query and dispatches a second worker — paying twice for
+ * the same analysis. Background functions get fifteen minutes, so this sits
+ * well inside that while leaving a slow run room to finish.
+ */
+export const JOB_TIMEOUT_MS = 10 * 60 * 1000;
 /**
  * Failures live only long enough for the polling client to collect the
  * outcome. A cached failure that outlived that would keep answering for a

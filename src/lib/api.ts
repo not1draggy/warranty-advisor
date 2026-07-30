@@ -33,7 +33,12 @@ interface JobResponse {
 
 const ENDPOINT = "/api/v1/analyses";
 const POLL_INTERVAL_MS = 2_500;
-const POLL_TIMEOUT_MS = 240_000;
+/**
+ * How long the interface waits before offering a retry. Deliberately shorter
+ * than the server's job timeout: giving up here must not make the job look
+ * abandoned, or retrying would start a second, duplicate research run.
+ */
+export const POLL_TIMEOUT_MS = 5 * 60 * 1000;
 
 const FAILURE_REASONS: readonly FailureReason[] = [
   "unavailable",

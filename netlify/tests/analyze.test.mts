@@ -99,6 +99,18 @@ describe("POST /api/v1/analyses", () => {
     expect(store.allowRequest).not.toHaveBeenCalled();
   });
 
+  it("resumes a run in progress rather than paying for it twice", async () => {
+    // The client gives up before the job does, so a retry must find the same
+    // job still pending and go back to polling it.
+    store.readJob.mockResolvedValue({ ...readyJob, status: "pending", evidence: undefined });
+
+    const response = await handler(post({ query: "Bosch WAN28160BY" }), context());
+
+    await expect(response.json()).resolves.toMatchObject({ status: "pending" });
+    expect(fetch).not.toHaveBeenCalled();
+    expect(store.writeJob).not.toHaveBeenCalled();
+  });
+
   it("re-researches instead of replaying a cached failure", async () => {
     // Otherwise one transient upstream error would block the product forever.
     store.readJob.mockResolvedValue({

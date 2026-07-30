@@ -98,7 +98,9 @@ export default async (request: Request): Promise<Response> => {
       failures: evidence.failures.length,
       sources: evidence.sources.length,
       matchLevel: evidence.product.matchLevel,
+      inputTokens: result.usage.input_tokens,
       outputTokens: result.usage.output_tokens,
+      searches: result.usage.server_tool_use?.web_search_requests ?? 0,
     });
     await writeJob({ ...job, status: "ready", evidence });
   } catch (error) {
