@@ -17,6 +17,7 @@ const store = vi.hoisted(() => ({
   readJob: vi.fn(),
   writeJob: vi.fn(),
   allowRequest: vi.fn(),
+  claimJob: vi.fn(),
   jobId: vi.fn(() => "job-1"),
   clientIp: vi.fn(() => "1.2.3.4"),
   log: vi.fn(),
@@ -52,6 +53,7 @@ beforeEach(() => {
   store.readJob.mockResolvedValue(null);
   store.writeJob.mockResolvedValue(undefined);
   store.allowRequest.mockResolvedValue(true);
+  store.claimJob.mockResolvedValue(true);
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 202 })));
 });
 
@@ -131,11 +133,22 @@ describe("POST /api/v1/analyses", () => {
 
     expect(response.status).toBe(202);
     await expect(response.json()).resolves.toMatchObject({ id: "job-1", status: "pending" });
-    expect(store.writeJob).toHaveBeenCalledWith(expect.objectContaining({ status: "pending" }));
+    expect(store.claimJob).toHaveBeenCalledWith(expect.objectContaining({ status: "pending" }));
 
     const [url, init] = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(String(url)).toContain("/.netlify/functions/analyze-background");
     expect(init).toMatchObject({ method: "POST" });
+  });
+
+  it("does not dispatch a second worker when another request got there first", async () => {
+    // A shared link can put several people on the same product at once.
+    store.claimJob.mockResolvedValue(false);
+
+    const response = await handler(post({ query: "Bosch WAN28160BY" }), context());
+
+    expect(response.status).toBe(202);
+    await expect(response.json()).resolves.toMatchObject({ status: "pending" });
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it("refuses a client that is asking too often", async () => {

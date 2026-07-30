@@ -21,6 +21,8 @@ export interface Job {
   evidence?: AnalysisEvidence;
   /** Machine-readable failure cause; the UI maps it to Slovak. */
   reason?: string;
+  /** Identifies the request that started this run; see `claimJob`. */
+  claimedBy?: string;
 }
 
 const ANALYSES_STORE = "analyses";
@@ -65,6 +67,28 @@ export async function readJob(id: string): Promise<Job | null> {
 
 export async function writeJob(job: Job): Promise<void> {
   await getStore(ANALYSES_STORE).setJSON(job.id, job);
+}
+
+/**
+ * Claims a new job, returning whether this request won the right to research.
+ *
+ * A shared link can land several people on the same product at once, and each
+ * duplicate is a paid research run. Blobs offers no compare-and-set, so this
+ * writes and then reads back with strong consistency: when requests race, they
+ * converge on the last write and only its owner dispatches a worker.
+ *
+ * That narrows the window rather than closing it. Losing the race costs one
+ * extra run, which is why a cheap mitigation beats an elaborate lock here.
+ */
+export async function claimJob(job: Job): Promise<boolean> {
+  await writeJob(job);
+
+  const stored = (await getStore(ANALYSES_STORE).get(job.id, {
+    type: "json",
+    consistency: "strong",
+  })) as Job | null;
+
+  return stored?.claimedBy === job.claimedBy;
 }
 
 export interface RateLimit {

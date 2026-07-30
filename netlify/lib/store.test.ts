@@ -16,6 +16,7 @@ vi.mock("@netlify/blobs", () => ({
 
 const {
   CACHE_TTL_MS,
+  claimJob,
   FAILURE_TTL_MS,
   JOB_TIMEOUT_MS,
   allowRequest,
@@ -108,6 +109,32 @@ describe("readJob", () => {
       createdAt: Date.now(),
     });
     expect(await readJob("c")).toMatchObject({ status: "failed", reason: "upstream_error" });
+  });
+});
+
+describe("claimJob", () => {
+  const pending = (claimedBy: string) => ({
+    id: "job-1",
+    query: "Bosch",
+    status: "pending" as const,
+    createdAt: Date.now(),
+    claimedBy,
+  });
+
+  it("grants the claim when nobody else is asking", async () => {
+    expect(await claimJob(pending("first"))).toBe(true);
+  });
+
+  it("refuses the claim to whoever was overwritten by a racing request", async () => {
+    // "first" writes, then "second" writes; reading back, only "second" wins.
+    await claimJob(pending("first"));
+    expect(await claimJob(pending("second"))).toBe(true);
+    expect((await readJob("job-1"))?.claimedBy).toBe("second");
+  });
+
+  it("stores the job whether or not the claim is won", async () => {
+    await claimJob(pending("first"));
+    expect(await readJob("job-1")).toMatchObject({ status: "pending" });
   });
 });
 

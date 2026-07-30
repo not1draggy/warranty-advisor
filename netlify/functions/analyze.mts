@@ -12,6 +12,7 @@
 import type { Config, Context } from "@netlify/functions";
 import {
   allowRequest,
+  claimJob,
   clientIp,
   jobId,
   log,
@@ -66,8 +67,20 @@ async function handlePost(request: Request) {
     return json({ error: "rate_limited" }, 429);
   }
 
-  const job: Job = { id, query, status: "pending", createdAt: Date.now() };
-  await writeJob(job);
+  const job: Job = {
+    id,
+    query,
+    status: "pending",
+    createdAt: Date.now(),
+    claimedBy: crypto.randomUUID(),
+  };
+
+  // Another request may be researching the same product right now — a shared
+  // link puts several people on it at once. The loser just polls along.
+  if (!(await claimJob(job))) {
+    log("analysis_already_running", { id });
+    return json({ id, status: "pending" }, 202);
+  }
 
   // Background functions accept the request and return 202 immediately, so
   // awaiting this only covers the handoff, not the research itself.
