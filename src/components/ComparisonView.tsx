@@ -66,9 +66,14 @@ export function ComparisonView({ candidates }: { candidates: Candidate[] }) {
   const [open, setOpen] = useState<string | null>(null);
   const ranked = comparison.candidates;
 
-  /** Marks the strongest cell in a row, but never in a row that is a draw. */
+  /**
+   * Marks the strongest cell in a row — never in a row that is a draw, and
+   * never at all between products that are not alternatives. Having just said
+   * these do not replace each other, highlighting a "winning" row would put
+   * the ranking back by implication.
+   */
   const bestValue = (row: (typeof ROWS)[number]) => {
-    if (!row.compare) return null;
+    if (!row.compare || comparison.basis === "incomparable") return null;
     const values = ranked.map(row.compare);
     const lowest = Math.min(...values);
     return values.filter((v) => v === lowest).length === values.length ? null : lowest;

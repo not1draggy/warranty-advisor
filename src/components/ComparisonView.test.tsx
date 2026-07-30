@@ -78,6 +78,14 @@ describe("the comparison table", () => {
     expect(rendered).not.toContain("Odporúčame</span>");
   });
 
+  it("marks no best value between products that are not alternatives", () => {
+    // Having just said these do not replace each other, highlighting a
+    // "winning" row would put the ranking back by implication.
+    const rendered = render([candidate(washer), candidate(phone)]);
+
+    expect(rendered).not.toContain("najlepšia hodnota");
+  });
+
   it("labels a demo candidate honestly inside the full analysis", () => {
     const demo = [candidate(washer, { live: false }), candidate(phone, { live: false })];
     // Both are demo data; putting them in a table must not imply research.
