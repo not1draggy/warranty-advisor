@@ -36,6 +36,21 @@ takže pripoistenie na tri roky reálne pridáva krytie na 3. až 5. rok — a r
 mu len tá časť porúch, ktorá do tohto okna spadá. Bez toho by záruka dostala
 kredit aj za poruchy, ktoré prídu dávno po jej skončení.
 
+### Porovnanie dvoch alebo troch výrobkov
+
+`Bosch WAN28160BY 349€ vs Samsung WW70 429€` spustí analýzy naraz a postaví ich
+vedľa seba. Každý kandidát si nesie vlastnú cenu aj podmienky záruky.
+
+Odporúčanie sa počíta rovnako deterministicky ako samotný verdikt — model
+nikdy nevidí ostatných kandidátov a nikdy nevyberá víťaza. Poradie rozhoduje
+najprv verdikt, potom riziko, a až keď je rozdiel v riziku v pásme šumu,
+celkové náklady. Dva body rozdielu v odhade nie sú zistenie, preto sa
+kandidáti, ktorých nič nerozlišuje, zobrazia ako nerozhodní.
+
+Ak kandidáti nie sú z rovnakej kategórie, porovnanie víťaza neurčí. Nikto sa
+nerozhoduje medzi práčkou a televízorom a sebavedomá odpoveď na otázku, ktorú
+kupujúci nepoložil, je horšia než priznanie, že sa porovnať nedajú.
+
 ### Ako dlho výrobok vydrží
 
 Každá pravdepodobnosť je meraná cez predpokladanú životnosť výrobku, takže bez
@@ -69,7 +84,7 @@ v jednotlivých kategóriách — či je vaňa zvarená, či je chladiaci okruh 
 
 ### Prístupnosť
 
-Päť obrazoviek — úvod, hotová analýza, chybové hlásenie — v tmavom aj svetlom
+Sedem obrazoviek — úvod, hotová analýza, porovnanie, chybové hlásenie — v tmavom aj svetlom
 režime prechádza auditom axe-core (WCAG 2.1 AA) bez jedinej námietky. Kontrast
 palety bol kvôli tomu prepracovaný.
 
@@ -97,7 +112,7 @@ pravdepodobnosti nesie názov svojej poruchy. Priebeh analýzy je živá oblasť
 ```bash
 npm install
 npm run dev     # rozhranie na ukážkových dátach
-npm test        # 269 testov: hodnotenie, normalizácia, úložisko, API, jazyk
+npm test        # 290 testov: hodnotenie, normalizácia, úložisko, API, jazyk
 npm run build   # kontrola typov + produkčný build
 ```
 

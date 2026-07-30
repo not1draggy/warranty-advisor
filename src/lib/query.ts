@@ -73,6 +73,32 @@ export function parseQuery(raw: string): ParsedQuery {
   };
 }
 
+/**
+ * Separators people use between two candidates they are choosing among.
+ *
+ * Word-bounded on purpose: a slash or a bare dash appears inside model numbers
+ * often enough that treating either as a separator would split one product in
+ * half.
+ */
+const COMPARISON_SPLIT = /\s+(?:vs\.?|versus|alebo|proti)\s+/i;
+
+/** Comparing more than this stops being a decision and starts being a list. */
+export const MAX_COMPARISON = 3;
+
+/**
+ * Splits a query into the candidates being weighed against each other.
+ *
+ * Each part keeps its own price and warranty terms, because a buyer comparing
+ * two offers is usually comparing two different prices.
+ */
+export function parseComparison(raw: string): ParsedQuery[] {
+  return raw
+    .split(COMPARISON_SPLIT)
+    .map((part) => parseQuery(part))
+    .filter((parsed) => parsed.product.length > 0)
+    .slice(0, MAX_COMPARISON);
+}
+
 export const EXAMPLE_QUERIES = [
   "Samsung UE75NU8000",
   "iPhone 13",
