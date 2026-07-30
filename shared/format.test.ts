@@ -63,7 +63,9 @@ function userFacingFiles(): string[] {
     join(ROOT, "shared", "format.ts"),
     join(ROOT, "src", "data", "demoAnalyses.ts"),
     ...readdirSync(componentsDir)
-      .filter((name) => name.endsWith(".tsx"))
+      // Tests quote the banned wordings in order to assert their absence, and
+      // nothing in a test file is ever shipped to a reader.
+      .filter((name) => name.endsWith(".tsx") && !name.includes(".test."))
       .map((name) => join(componentsDir, name)),
   ];
 }
