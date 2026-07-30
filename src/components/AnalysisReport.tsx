@@ -129,7 +129,7 @@ export function AnalysisReport({
             <p className="text-xs tracking-wide text-subtle uppercase">Bežná oprava</p>
             <p className="mt-1 text-2xl font-semibold">{eurRange(score.typicalRepairCost)}</p>
             <p className="mt-2 text-sm leading-relaxed text-muted">
-              Za 5 rokov možno očakávať náklady na opravy zhruba{" "}
+              Počas životnosti možno očakávať náklady na opravy zhruba{" "}
               <span className="font-medium text-ink">{eur(score.expectedRepairCost)}</span>.
             </p>
           </Card>

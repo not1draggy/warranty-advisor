@@ -37,7 +37,11 @@ export interface Failure {
   component: string;
   description: string;
   riskLevel: RiskLevel;
-  /** Chance this failure occurs at least once within `HORIZON_YEARS`, in percent. */
+  /**
+   * Chance this failure happens at least once over the product's service
+   * life, in percent. `onsetYears` says when within that life — the two
+   * together are what make a warranty term assessable.
+   */
   probability: number;
   /** How often it happens, in plain Slovak. */
   frequency: string;

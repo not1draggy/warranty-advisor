@@ -80,6 +80,15 @@ describe("user-facing language", () => {
     expect(offences).toEqual([]);
   });
 
+  it("never quotes a probability over a window its onset year contradicts", () => {
+    // probability spans the product's life; onsetYears says when. A card
+    // claiming "do 5 rokov" beside "Typicky v 7. až 10. roku" is nonsense.
+    for (const file of userFacingFiles()) {
+      const content = stripComments(readFileSync(file, "utf8"));
+      expect(content, file).not.toMatch(/pravdepodobnos.{0,30}5 rokov/i);
+    }
+  });
+
   it("explains thin evidence without calling the estimate unreliable", () => {
     const text = confidenceExplanation(20).toLowerCase();
     expect(text).toContain("kvalifikovaný");

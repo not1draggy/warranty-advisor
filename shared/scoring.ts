@@ -36,7 +36,7 @@ export interface Score {
   verdict: VerdictKind;
   /** Plain-Slovak justification lines — the "why this rating" section. */
   reasons: string[];
-  /** Expected repair spend across the whole ownership horizon, in EUR. */
+  /** Expected repair spend across the product's service life, in EUR. */
   expectedRepairCost: number;
   /** Cost range of the failures that actually drive the score. */
   typicalRepairCost: [number, number];
@@ -68,7 +68,7 @@ const CONFIDENCE_FOR_UNRESERVED_BUY = 45;
 const BUY_MAX_RISK = 34;
 const CAUTION_MAX_RISK = 62;
 
-/** Expected repair spend over the full ownership horizon, in EUR. */
+/** Expected repair spend across the product's whole service life, in EUR. */
 export function expectedRepairCost(failures: Failure[]): number {
   return failures.reduce((sum, f) => sum + (f.probability / 100) * mid(f.repairCost), 0);
 }
@@ -88,10 +88,10 @@ export function ownershipRisk(evidence: AnalysisEvidence): number {
   const price = Math.max(MIN_PRICE_EUR, evidence.product.estimatedPrice);
   const burden = expectedRepairCost(evidence.failures) / price;
 
-  // Calibration: spending ~15% of the purchase price on repairs across five
-  // years is ordinary ownership, ~30% is genuinely poor, and 50% saturates the
-  // evidence-driven part of the score. The remaining 30 points come from
-  // serviceability penalties.
+  // Calibration: spending ~15% of the purchase price on repairs across the
+  // product's life is ordinary ownership, ~30% is genuinely poor, and 50%
+  // saturates the evidence-driven part of the score. The remaining 30 points
+  // come from serviceability penalties.
   let risk = clamp(burden * 140, 0, 70);
   risk += PARTS_PENALTY[evidence.partsAvailability.rating];
   risk += DIFFICULTY_PENALTY[evidence.repairDifficulty.rating];
@@ -150,14 +150,14 @@ function buildReasons(evidence: AnalysisEvidence, score: Omit<Score, "reasons">)
   if (dominant) {
     reasons.push(
       `Na hodnotenie má najväčší vplyv ${dominant.component.toLowerCase()} — ` +
-        `porucha s odhadovanou pravdepodobnosťou ${dominant.probability} % počas ${HORIZON_YEARS} rokov ` +
+        `porucha s odhadovanou pravdepodobnosťou ${dominant.probability} % počas životnosti ` +
         `a cenou opravy ${eur(dominant.repairCost[0])} až ${eur(dominant.repairCost[1])}.`,
     );
   }
 
   const share = Math.round((score.expectedRepairCost / Math.max(MIN_PRICE_EUR, product.estimatedPrice)) * 100);
   reasons.push(
-    `Očakávané náklady na opravy počas ${HORIZON_YEARS} rokov sú približne ${eur(score.expectedRepairCost)}, ` +
+    `Očakávané náklady na opravy počas životnosti sú približne ${eur(score.expectedRepairCost)}, ` +
       `čo zodpovedá zhruba ${share} % ceny výrobku.`,
   );
 

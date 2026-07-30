@@ -63,7 +63,7 @@ export function FailureCard({ failure, sources }: { failure: Failure; sources: S
 
       <div className="mt-4">
         <div className="flex items-baseline justify-between text-xs text-muted">
-          <span>Odhadovaná pravdepodobnosť do 5 rokov</span>
+          <span>Odhadovaná pravdepodobnosť počas životnosti</span>
           <span className="font-medium text-ink">{failure.probability} %</span>
         </div>
         <div className="mt-1.5">

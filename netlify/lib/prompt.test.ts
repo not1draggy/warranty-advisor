@@ -124,6 +124,13 @@ describe("system prompt", () => {
     expect(SYSTEM_PROMPT).toContain("Refusing a thin query is the one thing you must");
   });
 
+  it("defines probability over the whole service life, not a fixed window", () => {
+    // Quoting a five-year probability for a fault that arrives at year seven
+    // contradicts its own onset window, and the report shows both side by side.
+    expect(SYSTEM_PROMPT).toContain("over the\n  product's whole service life");
+    expect(SYSTEM_PROMPT).toContain("would contradict its own timing");
+  });
+
   it("refuses invented citations and prices", () => {
     expect(SYSTEM_PROMPT).toContain("Never invent a URL");
     expect(SYSTEM_PROMPT).toContain("Never invent a price");

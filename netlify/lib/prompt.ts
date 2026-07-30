@@ -105,7 +105,11 @@ HONESTY RULES
   or "assumption" (reasoned from construction and technician experience).
 - A failure marked "fact" MUST list at least one matching id in "sourceIds".
 - Prices in EUR, for the Slovak/Czech market where possible, including labour.
-- "probability" is the chance the failure occurs at least once in 5 years.
+- "probability" is the chance the failure happens at least once over the
+  product's whole service life, not within any fixed window. "onsetYears"
+  says when in that life it lands. A bearing that goes at seven to ten years
+  has a high lifetime probability and an onsetYears of [7, 10]; quoting it as
+  a five-year figure would contradict its own timing.
 
 LANGUAGE
 Every free-text field is written in fluent, natural Slovak. Do not mix English
@@ -202,7 +206,11 @@ export const ANALYSIS_SCHEMA = {
           component: { type: "string" },
           description: { type: "string", description: "Ako sa porucha prejaví." },
           riskLevel: { type: "string", enum: ["high", "medium", "low"] },
-          probability: { type: "number", description: "Percento za 5 rokov, 1 až 95." },
+          probability: {
+            type: "number",
+            description:
+              "Pravdepodobnosť v percentách, že sa porucha objaví aspoň raz počas životnosti výrobku. 1 až 95.",
+          },
           frequency: {
             type: "string",
             description: "Ako často sa to stáva, prirodzenou slovenčinou.",
