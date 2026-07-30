@@ -81,6 +81,21 @@ export const REPAIR_DIFFICULTY: Record<Difficulty, string> = {
   high: "Náročná oprava",
 };
 
+/**
+ * When a failure typically first appears, in ownership years. This is what
+ * tells a buyer whether a warranty term would still be running at the time.
+ */
+export function onsetLabel(window: [number, number] | null): string | null {
+  if (!window) return null;
+
+  const from = Math.round(window[0]);
+  const to = Math.round(window[1]);
+
+  if (to <= 1) return "Objavuje sa už v prvom roku";
+  if (from === to) return `Typicky okolo ${from}. roku`;
+  return `Typicky v ${Math.max(from, 1)}. až ${to}. roku`;
+}
+
 /** Describes what the estimate stands on — never labels confidence as "low". */
 export function confidenceExplanation(confidence: number): string {
   if (confidence >= 75) {

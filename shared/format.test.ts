@@ -13,6 +13,7 @@ import {
   eur,
   eurRange,
   formatSourceDate,
+  onsetLabel,
   years,
 } from "./format";
 
@@ -128,6 +129,19 @@ describe("number and date formatting", () => {
     expect(years(1)).toBe("1 rok");
     expect(years(3)).toBe("3 roky");
     expect(years(5)).toBe("5 rokov");
+  });
+
+  it("states when a failure typically arrives", () => {
+    expect(onsetLabel([7, 10])).toBe("Typicky v 7. až 10. roku");
+    expect(onsetLabel([4, 4])).toBe("Typicky okolo 4. roku");
+  });
+
+  it("calls out infant mortality in plain words", () => {
+    expect(onsetLabel([0, 1])).toBe("Objavuje sa už v prvom roku");
+  });
+
+  it("says nothing about timing for damage that has none", () => {
+    expect(onsetLabel(null)).toBeNull();
   });
 
   it("describes an undated source in words rather than leaving a gap", () => {

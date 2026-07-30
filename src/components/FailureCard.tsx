@@ -5,6 +5,7 @@ import {
   SOURCE_AUTHORITY,
   eurRange,
   formatSourceDate,
+  onsetLabel,
 } from "../../shared/format";
 import { BasisChip, Card, Chip, Meter } from "./ui";
 
@@ -44,6 +45,7 @@ function SourceList({ sources }: { sources: Source[] }) {
 export function FailureCard({ failure, sources }: { failure: Failure; sources: Source[] }) {
   const tone = RISK_TONE[failure.riskLevel];
   const cited = sources.filter((source) => failure.sourceIds.includes(source.id));
+  const onset = onsetLabel(failure.onsetYears);
 
   return (
     <Card className="animate-rise">
@@ -77,7 +79,7 @@ export function FailureCard({ failure, sources }: { failure: Failure; sources: S
         <p className="mt-3 text-sm leading-relaxed text-muted">{failure.frequency}</p>
       )}
 
-      <div className="mt-4 flex flex-wrap items-center gap-x-8 gap-y-2 border-t border-line pt-3">
+      <div className="mt-4 flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-line pt-3">
         <div>
           <p className="text-xs text-subtle">Odhad ceny opravy</p>
           <p className="font-medium">{eurRange(failure.repairCost)}</p>
@@ -86,6 +88,12 @@ export function FailureCard({ failure, sources }: { failure: Failure; sources: S
           <p className="text-xs text-subtle">Náročnosť</p>
           <p className="font-medium">{REPAIR_DIFFICULTY[failure.difficulty]}</p>
         </div>
+        {onset && (
+          <div>
+            <p className="text-xs text-subtle">Kedy sa objaví</p>
+            <p className="font-medium">{onset}</p>
+          </div>
+        )}
       </div>
 
       {cited.length > 0 && <SourceList sources={cited} />}

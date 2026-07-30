@@ -52,7 +52,9 @@ async function research(query: string) {
     messages: [{ role: "user", content: buildUserMessage(query) }],
     tools: [WEB_SEARCH_TOOL],
     output_config: {
-      effort: "medium",
+      // Reliability judgement is the product; this runs off the request path,
+      // so buy quality with latency rather than the other way round.
+      effort: "high",
       format: { type: "json_schema", schema: ANALYSIS_SCHEMA },
     },
   });

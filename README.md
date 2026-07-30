@@ -25,6 +25,17 @@ spoľahlivosť odhadu aj samotné odporúčanie vznikajú deterministicky v
 `shared/scoring.ts` z toho, čo výskum našiel. Vďaka tomu sa hodnotenie nedá
 vymyslieť a vždy sa dá vysvetliť.
 
+### Kedy sa porucha objaví
+
+Spotrebiče nezlyhávajú rovnomerne. Ložiská bubna idú okolo siedmeho až
+desiateho roku, vypúšťacie čerpadlo medzi tretím a šiestym, elektronika buď
+hneď, alebo nikdy. Každá porucha preto nesie okno `onsetYears`.
+
+Z toho vychádza posudok predĺženej záruky: zákonná záruka kryje prvé dva roky,
+takže pripoistenie na tri roky reálne pridáva krytie na 3. až 5. rok — a ráta sa
+mu len tá časť porúch, ktorá do tohto okna spadá. Bez toho by záruka dostala
+kredit aj za poruchy, ktoré prídu dávno po jej skončení.
+
 ## Štruktúra
 
 | Priečinok            | Obsah                                                        |

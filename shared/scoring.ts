@@ -19,9 +19,15 @@ export type WarrantyWorth = "yes" | "borderline" | "no";
 export interface WarrantyAssessment {
   years: number;
   price: number;
-  /** Expected repair spend over the warranty term, in EUR. */
+  /** First ownership year the extension adds cover for. */
+  coversFrom: number;
+  /** Last ownership year it covers. */
+  coversTo: number;
+  /** Expected repair spend that actually falls inside that window, in EUR. */
   expectedCost: number;
   worth: WarrantyWorth;
+  /** Why the window does or does not line up with when this product fails. */
+  note: string;
 }
 
 export interface Score {
@@ -195,15 +201,70 @@ export function scoreAnalysis(evidence: AnalysisEvidence, now: Date = new Date()
 }
 
 /**
+ * Slovak statutory warranty. A paid extension only starts earning its price
+ * once this lapses, so repairs before it are worth nothing to the buyer.
+ */
+export const STATUTORY_WARRANTY_YEARS = 2;
+
+/**
+ * How much of a failure's likelihood lands in the ownership window
+ * `[from, to)`.
+ *
+ * Appliances do not fail uniformly: drum bearings go at seven to ten years, a
+ * drain pump at three to six. Cover that expires before the onset window is
+ * worth nothing against that failure — the mistake this product exists to
+ * stop buyers making. Failures with no characteristic timing are spread
+ * evenly across the ownership horizon instead.
+ */
+function shareInWindow(failure: Failure, from: number, to: number): number {
+  if (to <= from) return 0;
+
+  const [start, end] = failure.onsetYears ?? [0, HORIZON_YEARS];
+  const overlap = Math.min(to, end) - Math.max(from, start);
+  if (overlap <= 0) return 0;
+
+  const span = end - start;
+  return span <= 0 ? 1 : Math.min(1, overlap / span);
+}
+
+/** Names the most significant failure the cover would expire before. */
+function coverageNote(evidence: AnalysisEvidence, coversTo: number): string {
+  const missed = evidence.failures
+    .filter((f) => f.probability >= 10 && f.onsetYears !== null && f.onsetYears[0] >= coversTo)
+    .sort((a, b) => b.probability - a.probability);
+
+  if (missed.length === 0) {
+    return "Krytie zasahuje do obdobia, v ktorom sa poruchy tohto výrobku zvyčajne objavujú.";
+  }
+
+  const worst = missed[0];
+  const [from, to] = worst.onsetYears as [number, number];
+  return (
+    `${worst.component} sa typicky prejaví až v ${Math.round(from)}. až ${Math.round(to)}. roku, ` +
+    "teda po skončení tohto krytia — a práve táto porucha patrí k najzávažnejším."
+  );
+}
+
+/**
  * Is a paid extended warranty worth it for this product?
- * Compares its price against the repair spend expected over the same term.
+ *
+ * Weighs its price against only the repairs expected to fall inside the window
+ * it genuinely adds: after the statutory warranty lapses, until the extension
+ * itself runs out.
  */
 export function assessWarranty(
   evidence: AnalysisEvidence,
   years: number,
   price: number,
 ): WarrantyAssessment {
-  const expected = expectedRepairCost(evidence.failures) * (years / HORIZON_YEARS);
+  const coversFrom = STATUTORY_WARRANTY_YEARS;
+  const coversTo = STATUTORY_WARRANTY_YEARS + years;
+
+  const expected = evidence.failures.reduce(
+    (sum, f) =>
+      sum + (f.probability / 100) * mid(f.repairCost) * shareInWindow(f, coversFrom, coversTo),
+    0,
+  );
 
   let worth: WarrantyWorth;
   if (price <= 0) worth = "yes";
@@ -211,5 +272,13 @@ export function assessWarranty(
   else if (expected <= price * 0.7) worth = "no";
   else worth = "borderline";
 
-  return { years, price, expectedCost: Math.round(expected), worth };
+  return {
+    years,
+    price,
+    coversFrom,
+    coversTo,
+    expectedCost: Math.round(expected),
+    worth,
+    note: coverageNote(evidence, coversTo),
+  };
 }

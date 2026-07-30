@@ -41,6 +41,12 @@ export interface Failure {
   probability: number;
   /** How often it happens, in plain Slovak. */
   frequency: string;
+  /**
+   * Ownership years in which the failure typically first appears, e.g. `[7, 10]`
+   * for drum bearings. Decides whether a warranty term actually covers it.
+   * `null` when the failure has no characteristic onset (accidental damage).
+   */
+  onsetYears: [number, number] | null;
   /** Full repair cost range in EUR, parts + labour included. */
   repairCost: [number, number];
   basis: Basis;

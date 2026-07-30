@@ -19,6 +19,7 @@ function failure(overrides: Partial<Failure> = {}): Failure {
     riskLevel: "medium",
     probability: 20,
     frequency: "",
+    onsetYears: null,
     repairCost: [100, 200],
     basis: "estimate",
     difficulty: "medium",
@@ -220,6 +221,57 @@ describe("scoreAnalysis", () => {
     bare.product.matchLevel = "category";
     const score = scoreAnalysis(bare, NOW);
     expect(["buy", "caution", "avoid"]).toContain(score.verdict);
+  });
+});
+
+describe("assessWarranty coverage window", () => {
+  const single = (overrides: Partial<Failure>) =>
+    evidence({
+      failures: [failure({ probability: 30, repairCost: [200, 300], ...overrides })],
+    });
+
+  it("adds cover only after the statutory warranty lapses", () => {
+    const assessment = assessWarranty(evidence(), 3, 50);
+    expect(assessment.coversFrom).toBe(2);
+    expect(assessment.coversTo).toBe(5);
+  });
+
+  it("is worthless against a failure that arrives after it expires", () => {
+    // Drum bearings at seven years, against three years of cover ending at five.
+    const assessment = assessWarranty(single({ onsetYears: [7, 10] }), 3, 60);
+    expect(assessment.expectedCost).toBe(0);
+    expect(assessment.worth).toBe("no");
+  });
+
+  it("gives no credit for failures the statutory warranty already covers", () => {
+    expect(assessWarranty(single({ onsetYears: [0, 1] }), 3, 60).expectedCost).toBe(0);
+  });
+
+  it("counts the part of an onset window that overlaps the cover", () => {
+    // Cover spans years 2-5; two of the failure's three onset years fall inside.
+    expect(assessWarranty(single({ onsetYears: [3, 6] }), 3, 40).expectedCost).toBe(50);
+  });
+
+  it("names the dominant failure the cover would expire before", () => {
+    const assessment = assessWarranty(
+      single({ component: "Ložiská bubna", onsetYears: [7, 10] }),
+      3,
+      60,
+    );
+    expect(assessment.note).toContain("Ložiská bubna");
+    expect(assessment.note).toContain("7. až 10.");
+  });
+
+  it("confirms cover that reaches the years the product actually fails in", () => {
+    expect(assessWarranty(single({ onsetYears: [3, 6] }), 3, 40).note).toContain(
+      "Krytie zasahuje",
+    );
+  });
+
+  it("spreads a failure with no characteristic timing across the horizon", () => {
+    const accidental = single({ onsetYears: null });
+    // Cover spans years 2-5, so three fifths of a five-year uniform risk.
+    expect(assessWarranty(accidental, 3, 40).expectedCost).toBe(45);
   });
 });
 

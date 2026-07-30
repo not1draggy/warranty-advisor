@@ -80,6 +80,18 @@ function costRange(value: unknown): [number, number] | null {
   return high === 0 ? null : [Math.round(low), Math.round(high)];
 }
 
+/** Ownership-year window, ordered and bounded to a plausible service life. */
+function onsetWindow(value: unknown): [number, number] | null {
+  if (!Array.isArray(value) || value.length < 2) return null;
+  const from = num(value[0]);
+  const to = num(value[1]);
+  if (from === null || to === null) return null;
+  return [
+    Math.round(clamp(Math.min(from, to), 0, 30) * 10) / 10,
+    Math.round(clamp(Math.max(from, to), 0, 30) * 10) / 10,
+  ];
+}
+
 function isoDate(value: unknown): string | null {
   const raw = text(value, 10);
   return /^\d{4}-\d{2}(-\d{2})?$/.test(raw) ? raw : null;
@@ -154,6 +166,7 @@ function normalizeFailures(value: unknown, sourceIds: Set<string>): Failure[] {
       riskLevel: oneOf(raw.riskLevel, RISK_LEVELS, "medium"),
       probability: Math.round(clamp(num(raw.probability) ?? 10, 1, 95)),
       frequency: text(raw.frequency, MAX_SHORT_TEXT),
+      onsetYears: onsetWindow(raw.onsetYears),
       repairCost,
       basis,
       difficulty: oneOf(raw.difficulty, DIFFICULTIES, "medium"),

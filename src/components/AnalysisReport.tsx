@@ -44,9 +44,12 @@ function WarrantyPanel({
         </Chip>
       </div>
       <p className="mt-2 text-[0.9375rem] leading-relaxed text-muted">
-        {detail} Za toto obdobie vychádzajú očakávané náklady na opravy približne na{" "}
+        Zákonná záruka kryje prvé {formatYears(assessment.coversFrom)}, takže toto pripoistenie
+        reálne pridáva krytie na {assessment.coversFrom + 1}. až {assessment.coversTo}. rok.{" "}
+        {detail} Poruchy, ktoré v tomto okne hrozia, vychádzajú približne na{" "}
         <span className="font-medium text-ink">{eur(assessment.expectedCost)}</span>.
       </p>
+      <p className="mt-2 text-sm leading-relaxed text-subtle">{assessment.note}</p>
     </Card>
   );
 }
