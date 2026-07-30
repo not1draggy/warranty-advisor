@@ -1,83 +1,99 @@
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AnalysisReport } from "./components/AnalysisReport";
+import { LoadingSteps } from "./components/LoadingSteps";
 import { SearchHero } from "./components/SearchHero";
-import { LoadingSteps, LOADING_MIN_MS } from "./components/LoadingSteps";
-import {
-  ProductCard,
-  SummaryBanner,
-  ComponentRiskOverview,
-  Disclaimer,
-} from "./components/ResultSections";
-import { FailureCard } from "./components/FailureCard";
-import { Recommendation } from "./components/Recommendation";
-import { EmptyState } from "./components/EmptyState";
-import { search } from "./lib/search";
-import type { Product, WarrantyTier } from "./data/mockProducts";
+import { StateNotice } from "./components/StateNotice";
+import { analyze, type FailureReason } from "./lib/api";
+import { parseQuery, type ParsedQuery } from "./lib/query";
+import type { AnalysisEvidence } from "../shared/analysis";
 
 type View =
   | { kind: "idle" }
   | { kind: "loading" }
-  | { kind: "result"; product: Product; tier: WarrantyTier; live: boolean }
-  | { kind: "notfound" };
+  | { kind: "ready"; evidence: AnalysisEvidence; query: ParsedQuery; live: boolean }
+  | { kind: "failed"; reason: FailureReason };
+
+/** Keeps the address bar in step with the result so it can be shared or reloaded. */
+function syncUrl(query: string | null): void {
+  const url = new URL(window.location.href);
+  if (query) url.searchParams.set("q", query);
+  else url.searchParams.delete("q");
+  window.history.replaceState(null, "", url);
+}
 
 export default function App() {
   const [view, setView] = useState<View>({ kind: "idle" });
-  const searchSeq = useRef(0);
+  const lastQuery = useRef<string>("");
+  const inFlight = useRef<AbortController | null>(null);
 
-  const runSearch = async (query: string) => {
-    const seq = ++searchSeq.current;
+  const runSearch = useCallback(async (raw: string) => {
+    const parsed = parseQuery(raw);
+    if (!parsed.product) return;
+
+    inFlight.current?.abort();
+    const controller = new AbortController();
+    inFlight.current = controller;
+
+    lastQuery.current = raw;
+    syncUrl(raw);
     setView({ kind: "loading" });
-    const startedAt = Date.now();
 
-    const outcome = await search(query);
+    try {
+      const outcome = await analyze(parsed.product, controller.signal);
+      if (controller.signal.aborted) return;
 
-    const elapsed = Date.now() - startedAt;
-    const remaining = Math.max(0, LOADING_MIN_MS - elapsed);
-    await new Promise((r) => setTimeout(r, remaining));
-
-    if (seq !== searchSeq.current) return;
-
-    if (outcome.status === "found") {
-      setView({
-        kind: "result",
-        product: outcome.result.product,
-        tier: outcome.result.selectedTier,
-        live: outcome.live,
-      });
-    } else {
-      setView({ kind: "notfound" });
+      setView(
+        outcome.status === "ready"
+          ? { kind: "ready", evidence: outcome.evidence, query: parsed, live: outcome.live }
+          : { kind: "failed", reason: outcome.reason },
+      );
+    } catch {
+      // An abort means a newer search took over and owns the view now.
+      // Anything else must surface, or the user is stranded on the spinner.
+      if (!controller.signal.aborted) setView({ kind: "failed", reason: "upstream_error" });
+    } finally {
+      if (inFlight.current === controller) inFlight.current = null;
     }
-  };
+  }, []);
+
+  // Restore a shared or reloaded result.
+  useEffect(() => {
+    const query = new URL(window.location.href).searchParams.get("q");
+    if (query) void runSearch(query);
+  }, [runSearch]);
+
+  useEffect(() => () => inFlight.current?.abort(), []);
 
   return (
-    <main className="min-h-screen">
-      <SearchHero onSearch={runSearch} disabled={view.kind === "loading"} />
+    <div className="flex min-h-screen flex-col">
+      {/* Balances the empty space so the idle hero sits centred, not stranded. */}
+      {view.kind === "idle" && <div className="flex-1" aria-hidden="true" />}
 
-      {view.kind === "loading" && <LoadingSteps />}
-      {view.kind === "notfound" && <EmptyState onPick={runSearch} />}
+      <SearchHero
+        onSearch={(query) => void runSearch(query)}
+        busy={view.kind === "loading"}
+        compact={view.kind === "ready"}
+      />
 
-      {view.kind === "result" && (
-        <section className="mx-auto w-full max-w-3xl space-y-5 px-4 pb-20">
-          <ProductCard product={view.product} live={view.live} />
-          <SummaryBanner product={view.product} tier={view.tier} />
+      <main className="flex-1">
+        {view.kind === "loading" && <LoadingSteps />}
 
-          <div>
-            <h3 className="mb-3 font-semibold">Zoznam porúch podľa rizika</h3>
-            <div className="space-y-4">
-              {view.product.failures.map((f) => (
-                <FailureCard key={f.component} failure={f} />
-              ))}
-            </div>
-          </div>
+        {view.kind === "failed" && (
+          <StateNotice
+            reason={view.reason}
+            onRetry={() => void runSearch(lastQuery.current)}
+            onPick={(query) => void runSearch(query)}
+          />
+        )}
 
-          <ComponentRiskOverview product={view.product} />
-          <Disclaimer live={view.live} />
-          <Recommendation product={view.product} tier={view.tier} />
-        </section>
-      )}
+        {view.kind === "ready" && (
+          <AnalysisReport evidence={view.evidence} query={view.query} live={view.live} />
+        )}
+      </main>
 
-      <footer className="border-t border-slate-100 py-6 text-center text-xs text-slate-400">
+      <footer className="border-t border-line py-6 text-center text-xs text-subtle">
         Warranty Advisor · {new Date().getFullYear()}
       </footer>
-    </main>
+    </div>
   );
 }

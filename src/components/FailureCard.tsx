@@ -1,109 +1,94 @@
-import type { Failure } from "../data/mockProducts";
+import type { Failure, Source } from "../../shared/analysis";
+import {
+  REPAIR_DIFFICULTY,
+  RISK_LEVEL,
+  SOURCE_AUTHORITY,
+  eurRange,
+  formatSourceDate,
+} from "../../shared/format";
+import { BasisChip, Card, Chip, Meter } from "./ui";
 
-const RISK = {
-  high: { label: "Vysoké riziko", cls: "bg-red-50 text-red-700" },
-  medium: { label: "Stredné riziko", cls: "bg-amber-50 text-amber-700" },
-  low: { label: "Nízke riziko", cls: "bg-slate-100 text-slate-600" },
+const RISK_TONE = {
+  high: { chip: "bad", bar: "var(--bad)" },
+  medium: { chip: "warn", bar: "var(--warn)" },
+  low: { chip: "neutral", bar: "var(--ink-muted)" },
 } as const;
 
-function authorityBadgeCls(points: number) {
-  if (points >= 80) return "bg-brand-soft text-brand-dark";
-  if (points >= 40) return "bg-amber-50 text-amber-700";
-  return "bg-slate-100 text-slate-500";
-}
-
-function ConfidenceNote({ confidence }: { confidence: number }) {
-  if (confidence >= 70) return null;
-  if (confidence >= 40)
-    return (
-      <p className="mt-2 text-xs text-amber-700">Odhad na základe dostupných dát</p>
-    );
+function SourceList({ sources }: { sources: Source[] }) {
   return (
-    <p className="mt-2 text-xs text-red-600">
-      Iba orientačný odhad — nedostatok priamych zdrojov pre tento model
-    </p>
+    <details className="mt-4 border-t border-line pt-3">
+      <summary className="cursor-pointer text-sm text-accent select-none">
+        Zdroje ({sources.length})
+      </summary>
+      <ul className="mt-2 space-y-2">
+        {sources.map((source) => (
+          <li key={source.id} className="flex flex-wrap items-center justify-between gap-2">
+            <a
+              href={source.url ?? undefined}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="min-w-0 truncate text-sm text-ink/90 underline decoration-line underline-offset-4 hover:text-accent"
+            >
+              {source.name}
+            </a>
+            <span className="text-xs text-subtle">
+              {SOURCE_AUTHORITY[source.authority]} · {formatSourceDate(source.date)}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </details>
   );
 }
 
-export function FailureCard({ failure }: { failure: Failure }) {
-  const risk = RISK[failure.riskLevel];
-  const breakdown = [
-    ["Diel", failure.priceBreakdown.part],
-    ["Práca", failure.priceBreakdown.labor],
-    ["Diagnostika", failure.priceBreakdown.diagnostics],
-    ["Doprava", failure.priceBreakdown.transport],
-  ] as const;
+export function FailureCard({ failure, sources }: { failure: Failure; sources: Source[] }) {
+  const tone = RISK_TONE[failure.riskLevel];
+  const cited = sources.filter((source) => failure.sourceIds.includes(source.id));
 
   return (
-    <div className="animate-fade-up rounded-2xl border border-slate-200 bg-white p-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h4 className="font-medium">{failure.component}</h4>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400">~{failure.probability} %</span>
-          <span className={`rounded-full px-3 py-1 text-xs font-medium ${risk.cls}`}>
-            {risk.label}
-          </span>
+    <Card className="animate-rise">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <h3 className="font-medium">{failure.component}</h3>
+        <div className="flex flex-wrap items-center gap-2">
+          <BasisChip basis={failure.basis} />
+          <Chip tone={tone.chip}>{RISK_LEVEL[failure.riskLevel]}</Chip>
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {breakdown.map(([label, value]) => (
-          <div key={label} className="rounded-xl bg-slate-50 p-3">
-            <p className="text-xs text-slate-400">{label}</p>
-            <p className="mt-0.5 text-sm font-medium">{value} €</p>
-          </div>
-        ))}
-      </div>
-
-      <p className="mt-4 font-semibold">
-        Odhad: {failure.totalRange[0]} – {failure.totalRange[1]} €
-      </p>
+      {failure.description && (
+        <p className="mt-2 text-[0.9375rem] leading-relaxed text-muted">{failure.description}</p>
+      )}
 
       <div className="mt-4">
-        <div className="flex items-center justify-between text-xs text-slate-500">
-          <span>Spoľahlivosť údajov</span>
-          <span>{failure.confidence} %</span>
+        <div className="flex items-baseline justify-between text-xs text-muted">
+          <span>Odhadovaná pravdepodobnosť do 5 rokov</span>
+          <span className="font-medium text-ink">{failure.probability} %</span>
         </div>
-        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
-          <div
-            className="h-full rounded-full bg-brand transition-all"
-            style={{ width: `${failure.confidence}%` }}
+        <div className="mt-1.5">
+          <Meter
+            value={failure.probability}
+            label={`Pravdepodobnosť poruchy: ${failure.component}`}
+            color={tone.bar}
           />
         </div>
-        <ConfidenceNote confidence={failure.confidence} />
       </div>
 
-      <details className="mt-4">
-        <summary className="cursor-pointer text-sm text-brand-dark select-none">
-          Zdroje ({failure.sources.length})
-        </summary>
-        <ul className="mt-2 divide-y divide-slate-100">
-          {failure.sources.map((s) => (
-            <li key={s.name + s.date} className="flex items-center justify-between gap-3 py-2.5">
-              <div className="min-w-0">
-                {s.url && s.url !== "#" ? (
-                  <a
-                    href={s.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="truncate text-sm font-medium text-slate-800 hover:text-brand-dark hover:underline"
-                  >
-                    {s.name}
-                  </a>
-                ) : (
-                  <p className="truncate text-sm font-medium text-slate-800">{s.name}</p>
-                )}
-                <p className="text-xs text-slate-400">Získané {s.date}</p>
-              </div>
-              <span
-                className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${authorityBadgeCls(s.authorityPoints)}`}
-              >
-                {s.authorityLabel} · {s.authorityPoints} b
-              </span>
-            </li>
-          ))}
-        </ul>
-      </details>
-    </div>
+      {failure.frequency && (
+        <p className="mt-3 text-sm leading-relaxed text-muted">{failure.frequency}</p>
+      )}
+
+      <div className="mt-4 flex flex-wrap items-center gap-x-8 gap-y-2 border-t border-line pt-3">
+        <div>
+          <p className="text-xs text-subtle">Odhad ceny opravy</p>
+          <p className="font-medium">{eurRange(failure.repairCost)}</p>
+        </div>
+        <div>
+          <p className="text-xs text-subtle">Náročnosť</p>
+          <p className="font-medium">{REPAIR_DIFFICULTY[failure.difficulty]}</p>
+        </div>
+      </div>
+
+      {cited.length > 0 && <SourceList sources={cited} />}
+    </Card>
   );
 }

@@ -1,31 +1,103 @@
 @import "tailwindcss";
 
-@theme {
-  --color-brand: #00a651;
-  --color-brand-dark: #007a3c;
-  --color-brand-soft: #e8f7ef;
+/*
+ * Dark first: the palette below is the default, and `data-theme="light"` on
+ * <html> swaps it. Components only ever reference the semantic tokens.
+ */
+@layer base {
+  :root {
+    color-scheme: dark;
+    --canvas: #09090b;
+    --surface: #131316;
+    --surface-raised: #1c1c21;
+    --line: #27272e;
+    --ink: #f4f4f5;
+    --ink-muted: #a1a1aa;
+    --ink-subtle: #71717a;
+    --accent: #34d399;
+    --accent-strong: #6ee7b7;
+    --accent-soft: #0f2a20;
+    --good: #34d399;
+    --warn: #fbbf24;
+    --bad: #f87171;
+    --good-soft: #0f2a20;
+    --warn-soft: #2c2109;
+    --bad-soft: #2e1414;
+  }
 
-  --animate-fade-up: fade-up 0.4s ease-out both;
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --canvas: #ffffff;
+    --surface: #fafafa;
+    --surface-raised: #f4f4f5;
+    --line: #e4e4e7;
+    --ink: #18181b;
+    --ink-muted: #52525b;
+    --ink-subtle: #71717a;
+    --accent: #059669;
+    --accent-strong: #047857;
+    --accent-soft: #ecfdf5;
+    --good: #059669;
+    --warn: #b45309;
+    --bad: #dc2626;
+    --good-soft: #ecfdf5;
+    --warn-soft: #fffbeb;
+    --bad-soft: #fef2f2;
+  }
 
-  @keyframes fade-up {
+  body {
+    background-color: var(--canvas);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    font-family:
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      "Segoe UI",
+      Roboto,
+      sans-serif;
+  }
+
+  /* Respect users who ask the OS to reduce motion. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-raised: var(--surface-raised);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-muted: var(--ink-muted);
+  --color-subtle: var(--ink-subtle);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+  --color-good-soft: var(--good-soft);
+  --color-warn-soft: var(--warn-soft);
+  --color-bad-soft: var(--bad-soft);
+
+  --animate-rise: rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  @keyframes rise {
     from {
       opacity: 0;
-      transform: translateY(10px);
+      transform: translateY(12px);
     }
     to {
       opacity: 1;
       transform: translateY(0);
     }
   }
-}
-
-body {
-  @apply bg-white text-slate-900 antialiased;
-  font-family:
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    sans-serif;
 }

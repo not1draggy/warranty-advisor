@@ -1,57 +1,70 @@
 import { useEffect, useState } from "react";
 
+/**
+ * Progress for a research job that typically runs one to three minutes.
+ * The last step stays active until the job actually finishes, so the list
+ * never claims to be done before it is.
+ */
 const STEPS = [
-  "Identifikujem produkt…",
-  "Prehľadávam servisné cenníky…",
-  "Analyzujem hlásené poruchy…",
-  "Overujem zdroje a počítam spoľahlivosť…",
+  "Identifikujem výrobok",
+  "Prehľadávam servisné údaje a cenníky",
+  "Porovnávam s podobnými modelmi",
+  "Vyhodnocujem poruchy a náklady",
 ];
 
-const STEP_MS = 900;
-export const LOADING_MIN_MS = STEPS.length * STEP_MS;
+const STEP_MS = 9_000;
+/** After this long, reassure the user rather than leaving the list frozen. */
+const PATIENCE_MS = 45_000;
 
 export function LoadingSteps() {
-  const [done, setDone] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setDone((d) => Math.min(d + 1, STEPS.length));
-    }, STEP_MS);
+    const started = Date.now();
+    const timer = setInterval(() => setElapsed(Date.now() - started), 1_000);
     return () => clearInterval(timer);
   }, []);
 
+  const active = Math.min(Math.floor(elapsed / STEP_MS), STEPS.length - 1);
+
   return (
-    <div className="mx-auto w-full max-w-sm px-4 py-8" role="status" aria-live="polite">
-      <ul className="space-y-3">
-        {STEPS.map((step, i) => {
-          const isDone = i < done;
-          const isActive = i === done;
+    <div className="mx-auto w-full max-w-md px-4 py-6" role="status" aria-live="polite">
+      <ul className="space-y-3.5">
+        {STEPS.map((step, index) => {
+          const done = index < active;
+          const current = index === active;
+
           return (
             <li
               key={step}
-              className={`flex items-center gap-3 text-sm transition ${
-                isDone ? "text-slate-900" : isActive ? "text-slate-600" : "text-slate-300"
+              className={`flex items-center gap-3 text-[0.9375rem] transition-colors ${
+                done ? "text-muted" : current ? "text-ink" : "text-subtle/60"
               }`}
             >
               <span
-                className={`flex h-5 w-5 items-center justify-center rounded-full text-xs ${
-                  isDone
-                    ? "bg-brand-soft text-brand"
-                    : isActive
-                      ? "border border-slate-300"
-                      : "border border-slate-200"
+                aria-hidden="true"
+                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] ${
+                  done
+                    ? "bg-accent-soft text-accent"
+                    : current
+                      ? "border border-accent"
+                      : "border border-line"
                 }`}
               >
-                {isDone ? "✓" : ""}
-                {isActive && (
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400" />
-                )}
+                {done ? "✓" : current ? <span className="h-2 w-2 animate-pulse rounded-full bg-accent" /> : null}
               </span>
               {step}
             </li>
           );
         })}
       </ul>
+
+      {elapsed > PATIENCE_MS && (
+        <p className="mt-5 text-sm leading-relaxed text-subtle">
+          Dôkladná analýza trvá spravidla jednu až tri minúty. Prehľadávame servisné zdroje, aby
+          bolo hodnotenie čo najpresnejšie.
+        </p>
+      )}
     </div>
   );
 }
