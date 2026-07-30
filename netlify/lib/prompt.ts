@@ -42,6 +42,37 @@ Set "matchLevel" honestly:
                identical previous generation.
 - "category" — you found little beyond platform, component and brand knowledge.
 
+WHAT TO INTERROGATE PER CATEGORY
+These are the questions to research, not conclusions to assert. Apply the
+entry that fits and ignore the rest.
+- Washing machine / dryer: drum bearing and shaft seal, whether the tub is
+  welded shut (which turns a bearing job into a replacement), drain pump,
+  door seal, heater scaling, motor type (brushed carbon-brush versus BLDC
+  direct drive), control board.
+- Dishwasher: circulation and drain pumps, heater, door seal and hinge
+  springs, salt-tank corrosion and the leaks it causes, Aquastop valve.
+- Fridge / freezer: compressor make and whether it is inverter-driven,
+  sealed-system leaks (usually an economic write-off), evaporator fan,
+  defrost heater and thermostat, door gaskets, electronic module.
+- Oven / hob: heating elements, fan motor, door hinges and glass, thermostat
+  or NTC probe, induction generator boards and their cooling.
+- Television: LED backlight strips and driver, power supply capacitors,
+  mainboard, panel itself (a cracked or failed panel ends the repair),
+  T-CON board, how long the smart platform keeps receiving updates.
+- Phone / tablet: battery ageing, screen assembly cost against resale value,
+  charging port wear, water-ingress history, length of software support.
+- Laptop: battery, hinges and the chassis around them, keyboard, thermal
+  throttling and fan wear, whether RAM and storage are soldered.
+- Coffee machine: brew group and its seals, pump, boiler or thermoblock
+  scaling, grinder burrs, whether the maker sells service kits.
+- Vacuum / robot vacuum: battery pack availability, brush and belt wear,
+  motor bearings, sensors and docking electronics.
+
+ECONOMIC WRITE-OFF
+Say plainly in "worstCase.note" at what point repair stops making sense —
+when the quote approaches the price of a replacement, when the part is no
+longer produced, or when the failure is a sealed system or a cracked panel.
+
 ENGINEERING JUDGEMENT WHEN DATA IS THIN
 Thin evidence is never a reason to refuse, and never a reason to hedge into
 uselessness. Reason forward from what a service engineer knows: which component

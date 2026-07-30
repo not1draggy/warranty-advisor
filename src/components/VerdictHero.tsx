@@ -1,6 +1,7 @@
 import { confidenceExplanation, VERDICT, eur } from "../../shared/format";
 import type { Score } from "../../shared/scoring";
 import type { ProductIdentity } from "../../shared/analysis";
+import { ShareButton } from "./ShareButton";
 import { VERDICT_TONE } from "./verdict";
 
 const GAUGE_RADIUS = 54;
@@ -45,7 +46,13 @@ export function VerdictHero({ product, score, live }: Props) {
   const tone = VERDICT_TONE[score.verdict];
 
   return (
-    <div className={`animate-rise rounded-3xl border border-line ${tone.bg} p-6 sm:p-8`}>
+    <div
+      className="animate-rise rounded-3xl border border-line p-6 sm:p-8"
+      // A large panel filled with amber or red reads as mud rather than as
+      // meaning. Mixing a few percent of the verdict colour into the surface
+      // keeps the signal while the card stays calm, in either theme.
+      style={{ background: `color-mix(in oklab, ${tone.stroke} 7%, var(--surface))` }}
+    >
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <div className="flex flex-wrap items-baseline gap-x-3">
           <span className="text-xs font-medium tracking-widest text-muted uppercase">
@@ -53,8 +60,11 @@ export function VerdictHero({ product, score, live }: Props) {
           </span>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{product.model}</h1>
         </div>
-        <span className="text-xs text-subtle">
-          {live ? "Živá analýza" : "Ukážková analýza"}
+        <span className="flex items-center gap-3">
+          <span className="text-xs text-subtle">
+            {live ? "Živá analýza" : "Ukážková analýza"}
+          </span>
+          <ShareButton />
         </span>
       </div>
 

@@ -81,7 +81,10 @@ export function SearchHero({ onSearch, busy, compact }: Props) {
               </button>
             ))}
           </div>
-          <p className="mt-4 text-center text-xs text-subtle">
+          <p className="mt-5 text-center text-xs leading-relaxed text-subtle">
+            Prehľadáme servisné cenníky, technické fóra a skúsenosti majiteľov. Dôkladná analýza
+            trvá jednu až tri minúty.
+            <br />
             Ak zvažujete predĺženú záruku, pripíšte jej dĺžku a cenu — napríklad{" "}
             <span className="font-mono">+3 70,90€</span>
           </p>

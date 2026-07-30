@@ -13,8 +13,8 @@ const STEPS = [
 ];
 
 const STEP_MS = 9_000;
-/** After this long, reassure the user rather than leaving the list frozen. */
-const PATIENCE_MS = 45_000;
+/** Past this the wait is unusual, so say something more than the estimate. */
+const PATIENCE_MS = 90_000;
 
 export function LoadingSteps() {
   const [elapsed, setElapsed] = useState(0);
@@ -59,12 +59,11 @@ export function LoadingSteps() {
         })}
       </ul>
 
-      {elapsed > PATIENCE_MS && (
-        <p className="mt-5 text-sm leading-relaxed text-subtle">
-          Dôkladná analýza trvá spravidla jednu až tri minúty. Prehľadávame servisné zdroje, aby
-          bolo hodnotenie čo najpresnejšie.
-        </p>
-      )}
+      <p className="mt-5 text-sm leading-relaxed text-subtle">
+        {elapsed > PATIENCE_MS
+          ? "Tento model si vyžaduje dôkladnejšie hľadanie. Výsledok sa zobrazí hneď, ako bude hotový — stránku môžete nechať otvorenú na pozadí."
+          : "Analýza trvá jednu až tri minúty. Pokojne prepnite na inú kartu, v názve karty uvidíte, keď bude hotová."}
+      </p>
     </div>
   );
 }
