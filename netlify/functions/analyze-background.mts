@@ -17,6 +17,21 @@ const MAX_TOKENS = 32_000;
 const MAX_SEARCHES = 6;
 
 /**
+ * Ceiling on one research call.
+ *
+ * Research normally takes one to three minutes. Without a bound, a hung
+ * upstream runs until the platform kills the function, and the platform kills
+ * it without giving this code a chance to record anything — so the job sits
+ * pending until it ages out and the user waits out the whole job timeout for
+ * an answer that was never coming. Aborting first turns that silence into a
+ * failure the interface can explain and offer a retry for.
+ *
+ * Comfortably inside the fifteen minutes a background function is allowed, and
+ * far enough beyond a normal run to never cut a slow one short.
+ */
+const RESEARCH_TIMEOUT_MS = 8 * 60 * 1000;
+
+/**
  * Dynamic-filtering web search. The installed SDK's `ToolUnion` still only
  * knows the older `web_search_20250305`, so the definition is passed through
  * as-is; the model accepts it and filters results before they reach context.
@@ -30,19 +45,22 @@ const WEB_SEARCH_TOOL = {
 async function research(query: string) {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-  const stream = client.messages.stream({
-    model: MODEL,
-    max_tokens: MAX_TOKENS,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: "user", content: buildUserMessage(query) }],
-    tools: [WEB_SEARCH_TOOL],
-    output_config: {
-      // Reliability judgement is the product; this runs off the request path,
-      // so buy quality with latency rather than the other way round.
-      effort: "high",
-      format: { type: "json_schema", schema: ANALYSIS_SCHEMA },
+  const stream = client.messages.stream(
+    {
+      model: MODEL,
+      max_tokens: MAX_TOKENS,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: "user", content: buildUserMessage(query) }],
+      tools: [WEB_SEARCH_TOOL],
+      output_config: {
+        // Reliability judgement is the product; this runs off the request path,
+        // so buy quality with latency rather than the other way round.
+        effort: "high",
+        format: { type: "json_schema", schema: ANALYSIS_SCHEMA },
+      },
     },
-  });
+    { timeout: RESEARCH_TIMEOUT_MS },
+  );
 
   const message = await stream.finalMessage();
   if (message.stop_reason === "refusal") return { refused: true as const };

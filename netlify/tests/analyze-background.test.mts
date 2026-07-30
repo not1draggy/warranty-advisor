@@ -24,8 +24,8 @@ vi.mock("../lib/store", () => store);
 vi.mock("@anthropic-ai/sdk", () => ({
   default: class {
     messages = {
-      stream: (params: unknown) => {
-        model.streamed(params);
+      stream: (params: unknown, options?: unknown) => {
+        model.streamed(params, options);
         return { finalMessage: model.finalMessage };
       },
     };
@@ -236,5 +236,34 @@ describe("outcomes", () => {
 
     // A job left pending would have the client polling something nobody runs.
     expect(store.writeJob.mock.calls.every(([job]) => job.status !== "pending")).toBe(true);
+  });
+});
+
+describe("a research call that never returns", () => {
+  it("is bounded well inside the time the platform allows", async () => {
+    await dispatch();
+
+    const options = model.streamed.mock.calls[0][1] as { timeout?: number };
+
+    // Background functions get fifteen minutes, and being killed mid-call is
+    // the failure this exists to avoid, so it must abort with room to spare.
+    expect(options.timeout).toBeLessThan(14 * 60 * 1000);
+    // Never so tight that an ordinary slow run is cut short.
+    expect(options.timeout).toBeGreaterThan(5 * 60 * 1000);
+  });
+
+  it("records a failure the interface can explain rather than going silent", async () => {
+    // A worker killed mid-call writes nothing at all, so the job sits pending
+    // until it ages out and the user waits the whole job timeout for an answer
+    // that was never coming.
+    model.finalMessage.mockRejectedValue(
+      Object.assign(new Error("Request timed out."), { name: "APIConnectionTimeoutError" }),
+    );
+
+    await dispatch();
+
+    expect(store.writeJob).toHaveBeenLastCalledWith(
+      expect.objectContaining({ status: "failed", reason: "upstream_error" }),
+    );
   });
 });
