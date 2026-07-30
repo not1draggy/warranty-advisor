@@ -3,9 +3,11 @@ import type { AnalysisEvidence } from "../../shared/analysis";
 import {
   PARTS_AVAILABILITY,
   REPAIR_DIFFICULTY,
+  SOURCE_AUTHORITY,
   WARRANTY_WORTH,
   eur,
   eurRange,
+  formatSourceDate,
   years as formatYears,
 } from "../../shared/format";
 import { assessWarranty, scoreAnalysis } from "../../shared/scoring";
@@ -255,6 +257,30 @@ export function AnalysisReport({
             </Section>
           )}
         </Split>
+      )}
+
+      {evidence.sources.length > 0 && (
+        <Section title="Zdroje analýzy">
+          <Card>
+            <ul className="divide-y divide-line">
+              {evidence.sources.map((source) => (
+                <li key={source.id} className="py-2.5 first:pt-0 last:pb-0">
+                  <a
+                    href={source.url ?? undefined}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-ink/90 underline decoration-line underline-offset-4 hover:text-accent"
+                  >
+                    {source.name}
+                  </a>
+                  <p className="mt-0.5 text-xs text-subtle">
+                    {SOURCE_AUTHORITY[source.authority]} · {formatSourceDate(source.date)}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </Section>
       )}
 
       <p className="text-xs leading-relaxed text-subtle">
