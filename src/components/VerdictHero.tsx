@@ -47,7 +47,7 @@ export function VerdictHero({ product, score, live }: Props) {
 
   return (
     <div
-      className="animate-rise rounded-3xl border border-line p-6 sm:p-8"
+      className="animate-rise rounded-3xl border border-line p-6 break-inside-avoid sm:p-8"
       // A large panel filled with amber or red reads as mud rather than as
       // meaning. Mixing a few percent of the verdict colour into the surface
       // keeps the signal while the card stays calm, in either theme.

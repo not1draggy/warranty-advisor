@@ -43,7 +43,7 @@ export function StickyVerdict({ watch, product, score }: Props) {
       aria-hidden={!visible}
       tabIndex={visible ? 0 : -1}
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-      className={`fixed inset-x-0 top-0 z-20 border-b border-line bg-canvas/85 backdrop-blur transition-transform duration-300 ${
+      className={`fixed inset-x-0 top-0 z-20 border-b border-line bg-canvas/85 backdrop-blur transition-transform duration-300 print:hidden ${
         visible ? "translate-y-0" : "-translate-y-full"
       }`}
     >

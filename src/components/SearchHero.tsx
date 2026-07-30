@@ -19,7 +19,7 @@ export function SearchHero({ onSearch, busy, compact }: Props) {
   };
 
   return (
-    <header className={`mx-auto w-full max-w-3xl px-4 ${compact ? "pt-6 pb-8" : "pt-14 pb-10"}`}>
+    <header className={`mx-auto w-full max-w-3xl px-4 print:hidden ${compact ? "pt-6 pb-8" : "pt-14 pb-10"}`}>
       <div className="mb-6 flex justify-end">
         <ThemeToggle />
       </div>

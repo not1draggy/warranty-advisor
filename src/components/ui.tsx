@@ -4,7 +4,7 @@ import type { Basis } from "../../shared/analysis";
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl border border-line bg-surface p-5 sm:p-6 ${className}`}>
+    <div className={`rounded-2xl border border-line bg-surface p-5 break-inside-avoid sm:p-6 ${className}`}>
       {children}
     </div>
   );

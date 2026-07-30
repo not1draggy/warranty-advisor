@@ -138,7 +138,7 @@ export default function App() {
         )}
       </main>
 
-      <footer className="border-t border-line py-6 text-center text-xs text-subtle">
+      <footer className="border-t border-line py-6 text-center text-xs text-subtle print:hidden">
         Warranty Advisor · {new Date().getFullYear()}
       </footer>
     </div>

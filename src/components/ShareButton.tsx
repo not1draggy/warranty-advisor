@@ -52,7 +52,7 @@ export function ShareButton() {
     <button
       type="button"
       onClick={() => void share()}
-      className="rounded-full border border-ink/15 px-3 py-1 text-xs text-muted transition hover:border-accent hover:text-accent"
+      className="rounded-full border border-ink/15 px-3 py-1 text-xs text-muted transition hover:border-accent hover:text-accent print:hidden"
     >
       <span aria-hidden="true">⇪</span>
       <span className="ml-1.5">{LABELS[status]}</span>

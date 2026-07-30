@@ -65,6 +65,46 @@
     border-radius: 0.5rem;
   }
 
+  /*
+   * Print: a buyer taking the assessment to the shop. Force the light palette
+   * whatever the screen theme is — a dark report wastes a cartridge — and open
+   * the collapsed source lists, since paper cannot be expanded.
+   */
+  @media print {
+    :root,
+    :root[data-theme="dark"] {
+      color-scheme: light;
+      --canvas: #ffffff;
+      --surface: #ffffff;
+      --surface-raised: #ffffff;
+      --line: #d4d4d8;
+      --ink: #18181b;
+      --ink-muted: #3f3f46;
+      --ink-subtle: #52525b;
+      --accent: #047857;
+      --accent-strong: #035f45;
+      --accent-soft: #ffffff;
+      --good: #047857;
+      --warn: #92400e;
+      --bad: #b91c1c;
+      --good-soft: #ffffff;
+      --warn-soft: #ffffff;
+      --bad-soft: #ffffff;
+    }
+
+    details > summary {
+      display: none;
+    }
+
+    details > *:not(summary) {
+      display: revert !important;
+    }
+
+    h2 {
+      break-after: avoid;
+    }
+  }
+
   /* Respect users who ask the OS to reduce motion. */
   @media (prefers-reduced-motion: reduce) {
     *,
