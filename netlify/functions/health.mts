@@ -12,12 +12,14 @@
 
 import type { Config } from "@netlify/functions";
 import { getStore } from "@netlify/blobs";
-import { allowRequest, clientIp, log } from "../lib/store";
+import { allowRequest, clientIp, log, readJob, writeJob } from "../lib/store";
 
 export const config: Config = { path: "/api/v1/health" };
 
 const PROBE_STORE = "health";
 const PROBE_KEY = "probe";
+/** Distinctive enough that it can never collide with a real query's hash. */
+const PROBE_JOB_ID = "__health_probe__";
 
 /**
  * Each check costs one background-function invocation, which is metered. A
@@ -26,14 +28,30 @@ const PROBE_KEY = "probe";
  */
 const RATE_LIMIT = { windowMs: 60_000, max: 6 };
 
-/** Round-trips a value through Blobs, which backs both the cache and the jobs. */
+/**
+ * Round-trips a real job through the real code path.
+ *
+ * Deliberately not a private probe store: the fault that took the product down
+ * was a job written and then read back as missing a moment later, because the
+ * read was eventually consistent. Only exercising `writeJob` and `readJob`
+ * themselves can catch that, so this writes a probe job and reads it straight
+ * back exactly as a polling browser would.
+ */
 async function storageWorks(): Promise<boolean> {
   try {
     const store = getStore(PROBE_STORE);
     const stamp = Date.now();
     await store.setJSON(PROBE_KEY, { stamp });
     const read = (await store.get(PROBE_KEY, { type: "json" })) as { stamp?: number } | null;
-    return read?.stamp === stamp;
+    if (read?.stamp !== stamp) return false;
+
+    await writeJob({
+      id: PROBE_JOB_ID,
+      query: "health probe",
+      status: "pending",
+      createdAt: Date.now(),
+    });
+    return (await readJob(PROBE_JOB_ID))?.id === PROBE_JOB_ID;
   } catch {
     return false;
   }
@@ -103,7 +121,9 @@ export default async (request: Request): Promise<Response> => {
         ? "Živá analýza je pripravená."
         : [
             analysisKey ? null : "Chýba premenná ANTHROPIC_API_KEY.",
-            storage ? null : "Netlify Blobs nie je dostupné pre tento web.",
+            storage
+              ? null
+              : "Úložisko úloh nefunguje — analýza sa spustí, ale výsledok sa nedá načítať.",
             worker ? null : "Funkcia na pozadí (background function) nie je nasadená.",
           ]
             .filter(Boolean)

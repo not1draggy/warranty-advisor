@@ -211,13 +211,49 @@ describe("while polling a running job", () => {
     expect(fetchMock.urls[1]).toBe("/api/v1/analyses/job-1");
   });
 
-  it("offers a retry when the job has vanished from the store", async () => {
+  it("waits out a job that is not visible yet instead of declaring it gone", async () => {
+    // This is the bug that made every single analysis fail in production.
+    // Blobs reads are eventually consistent, so the job written a moment ago
+    // can read back as missing — and the client gave up on the first 404.
+    const fetchMock = respondWith(
+      json({ id: "job-1", status: "pending" }, 202),
+      new Response(null, { status: 404 }),
+      new Response(null, { status: 404 }),
+      new Response(null, { status: 404 }),
+      json({ id: "job-1", status: "ready", evidence }),
+    );
+
+    const outcome = await settle(analyze(DEMO_PRODUCT, controller.signal));
+
+    expect(outcome).toMatchObject({ status: "ready", live: true });
+    expect(fetchMock).toHaveBeenCalledTimes(5);
+  });
+
+  it("calls a job missing for long enough a storage fault, not a timeout", async () => {
+    // A pending job outlives the client's patience by design, and the only id
+    // polled is one this client just created, so it cannot legitimately age
+    // out mid-loop. Sustained absence is a fault worth reporting as one.
     respondWith(json({ id: "job-1", status: "pending" }, 202), new Response(null, { status: 404 }));
 
     expect(await settle(analyze(DEMO_PRODUCT, controller.signal))).toEqual({
       status: "failed",
-      reason: "timeout",
+      reason: "upstream_error",
     });
+  });
+
+  it("forgives a single blip once the job reappears", async () => {
+    const fetchMock = respondWith(
+      json({ id: "job-1", status: "pending" }, 202),
+      new Response(null, { status: 404 }),
+      json({ id: "job-1", status: "pending" }),
+      new Response(null, { status: 404 }),
+      json({ id: "job-1", status: "ready", evidence }),
+    );
+
+    expect(await settle(analyze(DEMO_PRODUCT, controller.signal))).toMatchObject({
+      status: "ready",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(5);
   });
 
   it("survives a network blip mid-poll instead of stranding the spinner", async () => {

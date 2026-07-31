@@ -1,14 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /** In-memory stand-in for Netlify Blobs, shared with the hoisted mock factory. */
-const { blobs } = vi.hoisted(() => ({ blobs: new Map<string, Map<string, unknown>>() }));
+const { blobs, reads } = vi.hoisted(() => ({
+  blobs: new Map<string, Map<string, unknown>>(),
+  reads: [] as { store: string; key: string; consistency?: string }[],
+}));
 
 vi.mock("@netlify/blobs", () => ({
   getStore: (name: string) => {
     if (!blobs.has(name)) blobs.set(name, new Map());
     const store = blobs.get(name)!;
     return {
-      get: async (key: string) => (store.has(key) ? store.get(key) : null),
+      get: async (key: string, options?: { consistency?: string }) => {
+        reads.push({ store: name, key, consistency: options?.consistency });
+        return store.has(key) ? store.get(key) : null;
+      },
       setJSON: async (key: string, value: unknown) => void store.set(key, value),
     };
   },
@@ -32,6 +38,7 @@ const LIMIT = { windowMs: 60_000, max: 3 };
 
 beforeEach(() => {
   blobs.clear();
+  reads.length = 0;
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-07-30T12:00:00Z"));
 });
@@ -258,5 +265,30 @@ describe("allowResearch", () => {
     process.env.DAILY_RESEARCH_LIMIT = "nonsense";
     // Falling back to zero would take live analysis down site-wide.
     expect(await allowResearch(new Date("2026-01-01T00:00:00Z"))).toBe(true);
+  });
+});
+
+describe("reading a job the client is about to poll", () => {
+  it("insists on a strongly consistent read", async () => {
+    // The whole product broke on this. Blobs reads are eventually consistent
+    // by default, so a job written a moment earlier can read back as missing —
+    // and the browser polls two and a half seconds after creating it. Every
+    // analysis looked like it had vanished the instant it started.
+    await writeJob({ id: "job-1", query: "q", status: "pending", createdAt: Date.now() });
+    reads.length = 0;
+
+    await readJob("job-1");
+
+    const jobReads = reads.filter((r) => r.store === "analyses");
+    expect(jobReads.length).toBeGreaterThan(0);
+    for (const read of jobReads) expect(read.consistency, read.key).toBe("strong");
+  });
+
+  it("reads back a job immediately after writing it", async () => {
+    const job = { id: "job-2", query: "q", status: "pending" as const, createdAt: Date.now() };
+
+    await writeJob(job);
+
+    expect(await readJob("job-2")).toMatchObject({ id: "job-2", status: "pending" });
   });
 });

@@ -53,7 +53,14 @@ export function jobId(query: string): string {
 }
 
 export async function readJob(id: string): Promise<Job | null> {
-  const job = (await getStore(ANALYSES_STORE).get(id, { type: "json" })) as Job | null;
+  // Strong consistency is not optional here. Blobs reads are eventually
+  // consistent by default, so a job written a second ago can read back as
+  // missing — and the client polls within two and a half seconds of creating
+  // it. Every analysis then looked like it had vanished.
+  const job = (await getStore(ANALYSES_STORE).get(id, {
+    type: "json",
+    consistency: "strong",
+  })) as Job | null;
   if (!job) return null;
 
   const age = Date.now() - job.createdAt;
@@ -83,12 +90,24 @@ export async function writeJob(job: Job): Promise<void> {
 export async function claimJob(job: Job): Promise<boolean> {
   await writeJob(job);
 
-  const stored = (await getStore(ANALYSES_STORE).get(job.id, {
-    type: "json",
-    consistency: "strong",
-  })) as Job | null;
+  let stored: Job | null = null;
+  try {
+    stored = (await getStore(ANALYSES_STORE).get(job.id, {
+      type: "json",
+      consistency: "strong",
+    })) as Job | null;
+  } catch {
+    // Unreadable is not the same as taken; see below.
+    return true;
+  }
 
-  return stored?.claimedBy === job.claimedBy;
+  // A read that comes back empty or unclaimed says nothing about a rival — it
+  // says the storage has not caught up. Assuming defeat there means no worker
+  // is ever dispatched and the analysis silently never happens, which is far
+  // worse than the duplicate run this check exists to avoid.
+  if (!stored?.claimedBy) return true;
+
+  return stored.claimedBy === job.claimedBy;
 }
 
 export interface RateLimit {

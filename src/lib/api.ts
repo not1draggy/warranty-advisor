@@ -36,6 +36,17 @@ interface JobResponse {
 const ENDPOINT = "/api/v1/analyses";
 const POLL_INTERVAL_MS = 2_500;
 /**
+ * How many consecutive "not found" replies to ride out before calling it a
+ * fault.
+ *
+ * A job cannot legitimately disappear while this loop is running: the server
+ * keeps a pending job for longer than the client is willing to wait, and the
+ * only id ever polled is one this client just created. So a 404 here means the
+ * write is not visible yet, not that the work is gone — and giving up on the
+ * first one made every single analysis fail.
+ */
+const MAX_MISSING_POLLS = 12;
+/**
  * How long the interface waits before offering a retry. Deliberately shorter
  * than the server's job timeout: giving up here must not make the job look
  * abandoned, or retrying would start a second, duplicate research run.
@@ -84,6 +95,7 @@ function demoOutcome(product: string): AnalysisOutcome {
 
 async function poll(id: string, signal: AbortSignal): Promise<AnalysisOutcome> {
   const deadline = Date.now() + POLL_TIMEOUT_MS;
+  let missing = 0;
 
   while (Date.now() < deadline) {
     await wait(POLL_INTERVAL_MS, signal);
@@ -97,9 +109,15 @@ async function poll(id: string, signal: AbortSignal): Promise<AnalysisOutcome> {
       return { status: "failed", reason: "network" };
     }
 
-    // A job that aged out of the store is indistinguishable from one that
-    // never finished; either way the user should be able to retry.
-    if (response.status === 404) return { status: "failed", reason: "timeout" };
+    // Not yet visible rather than gone — see MAX_MISSING_POLLS. Only a long
+    // run of these is a real fault, and it is a storage fault, not a timeout.
+    if (response.status === 404) {
+      missing += 1;
+      if (missing >= MAX_MISSING_POLLS) return { status: "failed", reason: "upstream_error" };
+      continue;
+    }
+    missing = 0;
+
     if (!response.ok) return { status: "failed", reason: "upstream_error" };
 
     const job = (await response.json()) as JobResponse;

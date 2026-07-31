@@ -21,6 +21,10 @@ const store = vi.hoisted(() => ({
   log: vi.fn(),
   allowRequest: vi.fn(),
   clientIp: vi.fn(() => "1.2.3.4"),
+  // The check writes a probe job and reads it straight back, because that
+  // read-after-write is exactly what failed in production.
+  writeJob: vi.fn(),
+  readJob: vi.fn(),
 }));
 
 vi.mock("@netlify/blobs", () => ({ getStore: () => blobs }));
@@ -44,6 +48,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   process.env.ANTHROPIC_API_KEY = "sk-ant-secret-value";
   store.allowRequest.mockResolvedValue(true);
+  store.writeJob.mockResolvedValue(undefined);
+  store.readJob.mockImplementation(async (id: string) => ({ id }));
   workingStorage();
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 400 })));
 });
@@ -97,7 +103,7 @@ describe("GET /api/v1/health", () => {
     const body = await (await handler(get())).json();
 
     expect(body.checks.storage).toBe(false);
-    expect(body.detail).toContain("Netlify Blobs");
+    expect(body.detail).toContain("Úložisko úloh");
   });
 
   it("reports storage as broken when Blobs is not provisioned at all", async () => {
@@ -106,6 +112,18 @@ describe("GET /api/v1/health", () => {
     const body = await (await handler(get())).json();
 
     expect(body.checks.storage).toBe(false);
+  });
+
+  it("catches a job that cannot be read back the instant it is written", async () => {
+    // The fault that broke every analysis: the write succeeds, the read a
+    // moment later comes back empty, and the browser concludes the work
+    // vanished. A probe store round trip alone would not have seen it.
+    store.readJob.mockResolvedValue(null);
+
+    const body = await (await handler(get())).json();
+
+    expect(body.checks.storage).toBe(false);
+    expect(body.detail).toContain("nedá načítať");
   });
 
   it("reports the worker as missing when it was never deployed", async () => {
@@ -145,7 +163,7 @@ describe("GET /api/v1/health", () => {
     expect(response.status).toBe(503);
     expect(body.checks).toEqual({ analysisKey: false, storage: false, worker: false });
     expect(body.detail).toContain("ANTHROPIC_API_KEY");
-    expect(body.detail).toContain("Netlify Blobs");
+    expect(body.detail).toContain("Úložisko úloh");
     expect(body.detail).toContain("pozadí");
   });
 
