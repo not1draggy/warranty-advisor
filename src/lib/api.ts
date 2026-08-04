@@ -13,12 +13,12 @@ export type FailureReason =
   | "unavailable"
   | "rate_limited"
   | "daily_limit"
-  | "timeout"
   | "network"
   | "refused"
   | "still_running"
   | "not_a_product"
   | "unusable_response"
+  | "worker_unavailable"
   | "upstream_error";
 
 export type AnalysisOutcome =
@@ -57,12 +57,12 @@ const FAILURE_REASONS: readonly FailureReason[] = [
   "unavailable",
   "rate_limited",
   "daily_limit",
-  "timeout",
   "network",
   "refused",
   "still_running",
   "not_a_product",
   "unusable_response",
+  "worker_unavailable",
   "upstream_error",
 ];
 

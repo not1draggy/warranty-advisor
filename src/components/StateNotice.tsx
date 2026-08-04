@@ -19,9 +19,9 @@ const MESSAGES: Record<FailureReason, { title: string; body: string }> = {
     title: "Dnešná kapacita analýz je vyčerpaná",
     body: "Nové analýzy budeme opäť spúšťať zajtra. Výrobky, ktoré sme už analyzovali, sa medzitým načítajú okamžite.",
   },
-  timeout: {
-    title: "Analýza trvala dlhšie, než je bežné",
-    body: "Zdroje sa nepodarilo prejsť v očakávanom čase. Skúste to prosím znova.",
+  worker_unavailable: {
+    title: "Výskum sa nepodarilo spustiť",
+    body: "Služba, ktorá analýzu vykonáva, práve neodpovedala. Skúste to prosím o chvíľu znova.",
   },
   network: {
     title: "Spojenie sa prerušilo",
@@ -57,7 +57,7 @@ const MESSAGES: Record<FailureReason, { title: string; body: string }> = {
 const RETRYABLE: ReadonlySet<FailureReason> = new Set<FailureReason>([
   "still_running",
   "rate_limited",
-  "timeout",
+  "worker_unavailable",
   "network",
   "unusable_response",
   "upstream_error",
