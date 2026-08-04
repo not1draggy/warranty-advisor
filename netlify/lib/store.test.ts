@@ -6,6 +6,21 @@ const { blobs, reads } = vi.hoisted(() => ({
   reads: [] as { store: string; key: string; consistency?: string }[],
 }));
 
+/**
+ * Stand-in for Netlify Blobs that behaves like the real thing.
+ *
+ * The outage that broke every analysis came from the one property this used to
+ * gloss over: reads are eventually consistent unless asked otherwise, so a
+ * value written a moment ago may not be readable yet. Returning it anyway made
+ * the mock kinder than production, and the bug was invisible until users hit it.
+ *
+ * Job state now has to be read strongly here or it reads as missing, exactly as
+ * it did in production. The counters are left alone on purpose: they are
+ * documented as approximate, and a slipped increment costs a spare request
+ * rather than an entire feature.
+ */
+const READ_YOUR_WRITES_REQUIRED = "analyses";
+
 vi.mock("@netlify/blobs", () => ({
   getStore: (name: string) => {
     if (!blobs.has(name)) blobs.set(name, new Map());
@@ -13,6 +28,9 @@ vi.mock("@netlify/blobs", () => ({
     return {
       get: async (key: string, options?: { consistency?: string }) => {
         reads.push({ store: name, key, consistency: options?.consistency });
+        if (name === READ_YOUR_WRITES_REQUIRED && options?.consistency !== "strong") {
+          return null;
+        }
         return store.has(key) ? store.get(key) : null;
       },
       setJSON: async (key: string, value: unknown) => void store.set(key, value),
