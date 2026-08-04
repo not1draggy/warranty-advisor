@@ -1,73 +1,99 @@
 import { useState } from "react";
-import { EXAMPLE_QUERIES } from "../data/mockProducts";
+import { EXAMPLE_QUERIES } from "../lib/query";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface Props {
   onSearch: (query: string) => void;
-  disabled: boolean;
+  busy: boolean;
+  compact: boolean;
 }
 
-export function SearchHero({ onSearch, disabled }: Props) {
+export function SearchHero({ onSearch, busy, compact }: Props) {
   const [value, setValue] = useState("");
 
-  const submit = (q: string) => {
-    const trimmed = q.trim();
-    if (!trimmed || disabled) return;
+  const submit = (query: string) => {
+    const trimmed = query.trim();
+    if (!trimmed || busy) return;
     setValue(trimmed);
     onSearch(trimmed);
   };
 
   return (
-    <header className="mx-auto w-full max-w-3xl px-4 pt-16 pb-10 text-center">
-      <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-        Zistite riziko opravy skôr, ako sa rozhodnete
-      </h1>
-      <p className="mx-auto mt-3 max-w-xl text-slate-500">
-        Zadajte model produktu a AI vám ukáže najčastejšie poruchy a reálne ceny opráv z overených
-        servisov.
-      </p>
+    <header className={`mx-auto w-full max-w-3xl px-4 print:hidden ${compact ? "pt-6 pb-8" : "pt-14 pb-10"}`}>
+      <div className="mb-6 flex justify-end">
+        <ThemeToggle />
+      </div>
+
+      {!compact && (
+        <div className="text-center">
+          <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+            Oplatí sa tento výrobok kúpiť?
+          </h1>
+          <p className="mx-auto mt-3 max-w-xl leading-relaxed text-muted">
+            Zadajte model a dostanete odborné hodnotenie spoľahlivosti, najčastejších porúch a
+            reálnych cien opráv.
+          </p>
+        </div>
+      )}
 
       <form
-        className="mx-auto mt-8 flex max-w-xl gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
+        className="mx-auto mt-8 flex max-w-xl flex-col gap-2 sm:flex-row"
+        onSubmit={(event) => {
+          event.preventDefault();
           submit(value);
         }}
       >
+        <label htmlFor="product-query" className="sr-only">
+          Model výrobku
+        </label>
         <input
+          id="product-query"
           type="text"
           value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder="Napr. Samsung UE75NU8000 +3 70,90€"
-          disabled={disabled}
-          className="h-12 flex-1 rounded-xl border border-slate-200 px-4 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-60"
+          onChange={(event) => setValue(event.target.value)}
+          placeholder="Napr. Bosch WAN28160BY alebo dva modely oddelené „vs“"
+          maxLength={120}
+          autoComplete="off"
+          disabled={busy}
+          className="h-12 flex-1 rounded-xl border border-line bg-surface px-4 text-[0.9375rem] outline-none transition placeholder:text-subtle focus:border-accent focus:ring-2 focus:ring-accent/25 disabled:opacity-60"
         />
         <button
           type="submit"
-          disabled={disabled}
-          className="h-12 rounded-xl bg-brand px-6 text-sm font-medium text-white transition hover:bg-brand-dark disabled:opacity-60"
+          disabled={busy || value.trim().length === 0}
+          className="h-12 rounded-xl bg-accent px-6 text-[0.9375rem] font-medium text-canvas transition hover:bg-accent-strong disabled:opacity-50"
         >
-          Analyzovať
+          {busy ? "Analyzujem…" : "Analyzovať"}
         </button>
       </form>
 
-      <div className="mt-4 flex flex-wrap justify-center gap-2">
-        {EXAMPLE_QUERIES.map((q) => (
-          <button
-            key={q}
-            type="button"
-            disabled={disabled}
-            onClick={() => submit(q)}
-            className="rounded-full border border-slate-200 px-4 py-1.5 text-xs text-slate-600 transition hover:border-brand hover:text-brand disabled:opacity-60"
-          >
-            {q}
-          </button>
-        ))}
-      </div>
-
-      <p className="mt-3 text-xs text-slate-400">
-        Tip: pridajte dĺžku a cenu záruky priamo do vyhľadávania, napr.{" "}
-        <span className="font-mono">+3 70,90€</span>
-      </p>
+      {!compact && (
+        <>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            {EXAMPLE_QUERIES.map((example) => (
+              <button
+                key={example}
+                type="button"
+                disabled={busy}
+                onClick={() => submit(example)}
+                className="rounded-full border border-line px-4 py-1.5 text-xs text-muted transition hover:border-accent hover:text-accent disabled:opacity-50"
+              >
+                {example}
+              </button>
+            ))}
+          </div>
+          <p className="mt-5 text-center text-xs leading-relaxed text-subtle">
+            Prehľadáme servisné cenníky, technické fóra a skúsenosti majiteľov. Dôkladná analýza
+            trvá jednu až tri minúty.
+            <br />
+            Máte konkrétnu ponuku? Pripíšte cenu — <span className="font-mono">349€</span> — a ak
+            zvažujete aj predĺženú záruku, jej dĺžku a cenu:{" "}
+            <span className="font-mono">+3 70,90€</span>
+            <br />
+            Vyberáte medzi dvomi? Oddeľte ich slovom{" "}
+            <span className="font-mono">vs</span> a porovnáme ich vedľa seba.
+          </p>
+        </>
+      )}
     </header>
   );
 }

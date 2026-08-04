@@ -2,9 +2,35 @@
   command = "npm run build"
   publish = "dist"
 
+[build.environment]
+  NODE_VERSION = "20"
+
 [functions]
   node_bundler = "esbuild"
 
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # The build emits no inline scripts, so script-src stays strict. Inline
+    # styles are needed for the risk gauge and the probability meters, which
+    # set width and colour per render.
+    content-security-policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'"
+    x-content-type-options = "nosniff"
+    referrer-policy = "strict-origin-when-cross-origin"
+    permissions-policy = "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+    cross-origin-opener-policy = "same-origin"
+
+# Static assets are immutable — Vite fingerprints every filename.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    cache-control = "public, max-age=31536000, immutable"
+
+# SPA fallback. Function routes declared via `config.path` are matched first —
+# proven in production, where the API answered 202 and 404 through this rule
+# rather than serving index.html. Do not add an `/api/*` rule to "protect"
+# these routes: if the precedence is ever the other way round, such a rule
+# would be what breaks them.
 [[redirects]]
   from = "/*"
   to = "/index.html"

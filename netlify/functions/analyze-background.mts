@@ -1,0 +1,134 @@
+/**
+ * Background worker that researches one product and stores the evidence.
+ *
+ * Only runs for a job the API already created and left pending, so hitting
+ * this endpoint directly cannot start paid research on its own.
+ */
+
+import Anthropic from "@anthropic-ai/sdk";
+import { normalizeEvidence } from "../../shared/normalize";
+import { extractJson } from "../lib/json";
+import { ANALYSIS_SCHEMA, SYSTEM_PROMPT, buildUserMessage } from "../lib/prompt";
+import { log, readJob, writeJob } from "../lib/store";
+
+const MODEL = "claude-opus-5";
+/** Generous: the cap covers thinking, web search and the JSON answer together. */
+const MAX_TOKENS = 32_000;
+const MAX_SEARCHES = 6;
+
+/**
+ * Ceiling on one research call.
+ *
+ * Research normally takes one to three minutes. Without a bound, a hung
+ * upstream runs until the platform kills the function, and the platform kills
+ * it without giving this code a chance to record anything — so the job sits
+ * pending until it ages out and the user waits out the whole job timeout for
+ * an answer that was never coming. Aborting first turns that silence into a
+ * failure the interface can explain and offer a retry for.
+ *
+ * Comfortably inside the fifteen minutes a background function is allowed, and
+ * far enough beyond a normal run to never cut a slow one short.
+ */
+export const RESEARCH_TIMEOUT_MS = 8 * 60 * 1000;
+
+/**
+ * Dynamic-filtering web search. The installed SDK's `ToolUnion` still only
+ * knows the older `web_search_20250305`, so the definition is passed through
+ * as-is; the model accepts it and filters results before they reach context.
+ */
+const WEB_SEARCH_TOOL = {
+  type: "web_search_20260209",
+  name: "web_search",
+  max_uses: MAX_SEARCHES,
+} as unknown as Anthropic.ToolUnion;
+
+async function research(query: string) {
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+  const stream = client.messages.stream(
+    {
+      model: MODEL,
+      max_tokens: MAX_TOKENS,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: "user", content: buildUserMessage(query) }],
+      tools: [WEB_SEARCH_TOOL],
+      output_config: {
+        // Reliability judgement is the product; this runs off the request path,
+        // so buy quality with latency rather than the other way round.
+        effort: "high",
+        format: { type: "json_schema", schema: ANALYSIS_SCHEMA },
+      },
+    },
+    { timeout: RESEARCH_TIMEOUT_MS },
+  );
+
+  const message = await stream.finalMessage();
+  if (message.stop_reason === "refusal") return { refused: true as const };
+
+  const text = message.content
+    .filter((block): block is Anthropic.TextBlock => block.type === "text")
+    .map((block) => block.text)
+    .join("");
+
+  return { refused: false as const, parsed: extractJson(text), usage: message.usage };
+}
+
+export default async (request: Request): Promise<Response> => {
+  const body = (await request.json().catch(() => null)) as { id?: unknown } | null;
+  const id = typeof body?.id === "string" ? body.id : null;
+  if (!id) return new Response(null, { status: 400 });
+
+  const job = await readJob(id);
+  if (!job || job.status !== "pending") return new Response(null, { status: 409 });
+
+  const startedAt = Date.now();
+  try {
+    const result = await research(job.query);
+
+    if (result.refused) {
+      log("analysis_refused", { id });
+      await writeJob({ ...job, status: "failed", reason: "refused" });
+      return new Response(null, { status: 200 });
+    }
+
+    // The query named no appliance at all — say so rather than inventing a
+    // verdict about nothing. Thin evidence about a real product never lands here.
+    if (
+      typeof result.parsed === "object" &&
+      result.parsed !== null &&
+      (result.parsed as { isProduct?: unknown }).isProduct === false
+    ) {
+      log("analysis_not_a_product", { id });
+      await writeJob({ ...job, status: "failed", reason: "not_a_product" });
+      return new Response(null, { status: 200 });
+    }
+
+    const evidence = normalizeEvidence(result.parsed, job.query);
+    if (!evidence) {
+      log("analysis_unusable", { id, ms: Date.now() - startedAt });
+      await writeJob({ ...job, status: "failed", reason: "unusable_response" });
+      return new Response(null, { status: 200 });
+    }
+
+    log("analysis_ready", {
+      id,
+      ms: Date.now() - startedAt,
+      failures: evidence.failures.length,
+      sources: evidence.sources.length,
+      matchLevel: evidence.product.matchLevel,
+      inputTokens: result.usage.input_tokens,
+      outputTokens: result.usage.output_tokens,
+      searches: result.usage.server_tool_use?.web_search_requests ?? 0,
+    });
+    await writeJob({ ...job, status: "ready", evidence });
+  } catch (error) {
+    log("analysis_error", {
+      id,
+      ms: Date.now() - startedAt,
+      message: error instanceof Error ? error.message : "unknown",
+    });
+    await writeJob({ ...job, status: "failed", reason: "upstream_error" });
+  }
+
+  return new Response(null, { status: 200 });
+};

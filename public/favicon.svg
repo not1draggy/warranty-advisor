@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Warranty Advisor">
+  <!--
+    A shield, for the question the product answers: will this thing hold up.
+    Drawn on a dark plate so it keeps its contrast in a light browser chrome
+    as well as a dark one — a favicon cannot respond to the page theme.
+  -->
+  <rect width="32" height="32" rx="7" fill="#09090b"/>
+  <path d="M16 6.5 24 9.5v6.2c0 4.6-3.2 8.1-8 9.8-4.8-1.7-8-5.2-8-9.8V9.5z"
+        fill="none" stroke="#34d399" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="m12.4 15.8 2.9 2.9 5-5.4" fill="none" stroke="#34d399" stroke-width="2.2"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
