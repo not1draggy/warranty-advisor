@@ -139,7 +139,7 @@ pravdepodobnosti nesie názov svojej poruchy. Priebeh analýzy je živá oblasť
 ```bash
 npm install
 npm run dev     # rozhranie na ukážkových dátach
-npm test        # 354 testov: hodnotenie, normalizácia, úložisko, API, jazyk
+npm test        # 356 testov: hodnotenie, normalizácia, úložisko, API, jazyk
 npm run build   # kontrola typov + produkčný build
 npm run test:coverage  # pokrytie podľa vrstiev
 ```
@@ -181,6 +181,21 @@ Počítajú sa len analýzy, za ktoré sa naozaj platí: odpoveď z cache strop
 neminie, takže vyčerpaný deň neodstaví už hotové analýzy. Ak zlyhá samotné
 počítadlo, požiadavka prejde — výpadok úložiska nesmie zhodiť produkt a
 nekontrolované míňanie je dlhodobý jav, ktorý zachytí ďalšia požiadavka.
+
+### Skúška naostro proti nasadenej stránke
+
+```bash
+npm run smoke -- https://mojastranka.netlify.app
+npm run smoke -- https://mojastranka.netlify.app "Bosch WAN28160BY"
+```
+
+Spustí jednu skutočnú analýzu a priebežne vypisuje, čo sa deje: stav
+diagnostiky, prijatie úlohy, každé čakanie, a nakoniec nájdené poruchy, ceny a
+zdroje. Návratový kód 0 znamená, že analýza naozaj prišla.
+
+Existuje preto, že všetkých 356 testov prechádzalo, kým bol produkt úplne
+nefunkčný — žiadny z nich nešiel cez skutočné nasadenie. Tento skript by tú
+chybu odhalil za pár sekúnd.
 
 ### Kontrola nasadenia
 

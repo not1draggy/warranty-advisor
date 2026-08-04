@@ -145,6 +145,25 @@ describe("when the request itself fails", () => {
     });
   });
 
+  it("does not choke when something answers in the API's place", async () => {
+    // A catch-all redirect serving the app shell returns HTML with status 200.
+    // Parsing that threw, and the interface was left mid-analysis forever.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response("<!doctype html><title>app</title>", {
+          status: 200,
+          headers: { "content-type": "text/html" },
+        }),
+      ),
+    );
+
+    expect(await analyze(DEMO_PRODUCT, controller.signal)).toEqual({
+      status: "failed",
+      reason: "upstream_error",
+    });
+  });
+
   it("treats any other error status as an upstream fault", async () => {
     respondWith(json({ error: "internal_error" }, 500));
 
@@ -275,6 +294,18 @@ describe("while polling a running job", () => {
 
   it("reports a poll fault without claiming the analysis itself failed", async () => {
     respondWith(json({ id: "job-1", status: "pending" }, 202), new Response(null, { status: 502 }));
+
+    expect(await settle(analyze(DEMO_PRODUCT, controller.signal))).toEqual({
+      status: "failed",
+      reason: "upstream_error",
+    });
+  });
+
+  it("survives a non-JSON reply mid-poll", async () => {
+    respondWith(
+      json({ id: "job-1", status: "pending" }, 202),
+      new Response("<!doctype html>", { status: 200, headers: { "content-type": "text/html" } }),
+    );
 
     expect(await settle(analyze(DEMO_PRODUCT, controller.signal))).toEqual({
       status: "failed",

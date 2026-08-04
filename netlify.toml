@@ -26,7 +26,16 @@
   [headers.values]
     cache-control = "public, max-age=31536000, immutable"
 
-# SPA fallback. Function routes declared via `config.path` are matched first.
+# Never let the SPA fallback answer for the API. Function routes declared via
+# `config.path` are matched first, but if that ever stopped holding, every API
+# call would return index.html with status 200 — a "success" the client would
+# choke on while parsing. Failing loudly here is far easier to diagnose.
+[[redirects]]
+  from = "/api/*"
+  to = "/api/:splat"
+  status = 404
+
+# SPA fallback for everything else.
 [[redirects]]
   from = "/*"
   to = "/index.html"

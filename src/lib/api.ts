@@ -120,7 +120,11 @@ async function poll(id: string, signal: AbortSignal): Promise<AnalysisOutcome> {
 
     if (!response.ok) return { status: "failed", reason: "upstream_error" };
 
-    const job = (await response.json()) as JobResponse;
+    // A 200 that is not JSON means something answered in the API's place —
+    // typically a catch-all redirect serving the app shell. Parsing would
+    // throw and strand the interface mid-analysis.
+    const job = (await response.json().catch(() => null)) as JobResponse | null;
+    if (!job) return { status: "failed", reason: "upstream_error" };
     if (job.status === "ready" && job.evidence) {
       return { status: "ready", evidence: job.evidence, live: true };
     }
@@ -163,7 +167,8 @@ export async function analyze(product: string, signal: AbortSignal): Promise<Ana
   }
   if (!response.ok) return { status: "failed", reason: "upstream_error" };
 
-  const job = (await response.json()) as JobResponse;
+  const job = (await response.json().catch(() => null)) as JobResponse | null;
+  if (!job) return { status: "failed", reason: "upstream_error" };
   if (job.status === "ready" && job.evidence) {
     return { status: "ready", evidence: job.evidence, live: true };
   }
